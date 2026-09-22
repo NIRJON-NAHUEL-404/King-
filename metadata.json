@@ -1,0 +1,6 @@
+{
+  "name": "Ludo King",
+  "description": "Classic multiplayer and VS AI Ludo board game featuring authentic board rules, 3D animated dice rolls, token pathing, captures, and victory celebration.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
