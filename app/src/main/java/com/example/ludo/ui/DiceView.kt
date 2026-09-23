@@ -145,9 +145,12 @@ fun DiceView(
                 text = labelText,
                 style = MaterialTheme.typography.labelSmall.copy(
                     fontSize = 10.sp,
+                    lineHeight = 14.sp,
                     fontWeight = if (canRoll) FontWeight.ExtraBold else FontWeight.SemiBold,
                     color = if (canRoll) activeColor.primary else if (isActivePlayer) activeColor.darkShade else MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                ),
+                maxLines = 1,
+                softWrap = false
             )
         }
     }

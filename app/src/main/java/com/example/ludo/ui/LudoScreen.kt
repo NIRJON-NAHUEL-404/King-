@@ -139,18 +139,18 @@ fun LudoScreen(viewModel: LudoViewModel) {
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 8.dp, vertical = 2.dp)
         ) {
-            // Mode, Turn Status & Counter badge bar
+            // Mode, Turn Status & Counter badge bar (Strictly fixed height to prevent any layout jumping)
             Row(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 4.dp, vertical = 2.dp)
+                    .height(36.dp)
+                    .padding(horizontal = 4.dp)
             ) {
                 Surface(
                     shape = RoundedCornerShape(16.dp),
                     color = MaterialTheme.colorScheme.primaryContainer,
-                    modifier = Modifier.padding(2.dp)
                 ) {
                     Text(
                         text = state.gameMode.label,
@@ -158,20 +158,29 @@ fun LudoScreen(viewModel: LudoViewModel) {
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
                         ),
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                        maxLines = 1,
+                        softWrap = false,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                     )
                 }
 
-                // Live Game Status Badge
+                Spacer(modifier = Modifier.width(6.dp))
+
+                // Live Game Status Badge (occupies dynamic middle width, single-line, zero jitter)
                 Surface(
                     shape = RoundedCornerShape(16.dp),
                     color = activeColor.cyberPlate,
                     border = BorderStroke(1.dp, activeColor.neonGlow.copy(alpha = 0.6f)),
-                    modifier = Modifier.padding(horizontal = 4.dp)
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(28.dp)
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp)
+                        horizontalArrangement = Arrangement.Center,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 8.dp)
                     ) {
                         Box(
                             modifier = Modifier
@@ -179,7 +188,7 @@ fun LudoScreen(viewModel: LudoViewModel) {
                                 .clip(CircleShape)
                                 .background(activeColor.neonGlow)
                         )
-                        Spacer(modifier = Modifier.width(6.dp))
+                        Spacer(modifier = Modifier.width(5.dp))
                         Text(
                             text = "${activePlayer?.name ?: ""}: ${state.statusMessage}",
                             style = MaterialTheme.typography.labelSmall.copy(
@@ -188,16 +197,22 @@ fun LudoScreen(viewModel: LudoViewModel) {
                                 fontSize = 11.sp
                             ),
                             maxLines = 1,
+                            softWrap = false,
                             overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
 
+                Spacer(modifier = Modifier.width(6.dp))
+
                 Text(
                     text = "Turn #${state.totalTurns + 1}",
                     style = MaterialTheme.typography.bodySmall.copy(
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = FontWeight.Medium
+                    ),
+                    maxLines = 1,
+                    softWrap = false
                 )
             }
 

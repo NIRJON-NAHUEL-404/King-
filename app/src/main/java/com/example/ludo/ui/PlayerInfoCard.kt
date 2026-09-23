@@ -82,6 +82,7 @@ fun PlayerInfoCard(
         tonalElevation = if (isActive) 4.dp else 1.dp,
         modifier = modifier
             .testTag("player_card_${player.color.name.lowercase()}")
+            .height(38.dp)
             .scale(pulseScale)
             .border(
                 width = if (isActive) 1.5.dp else 0.8.dp,
@@ -224,6 +225,7 @@ fun CornerDiceBox(
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
+            .size(width = 76.dp, height = 82.dp)
             .scale(if (canRoll) pulseScale else 1f)
             .shadow(
                 elevation = if (canRoll) 10.dp else if (isActive) 5.dp else 2.dp,

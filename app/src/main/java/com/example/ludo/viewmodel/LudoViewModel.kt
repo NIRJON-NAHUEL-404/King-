@@ -366,20 +366,20 @@ class LudoViewModel(application: Application) : AndroidViewModel(application) {
                 )
             }
 
-            // Animate step by step at a satisfying, clear pace
+            // Animate step by step at 0.5x speed (deliberate, clear, satisfying pace)
             if (token.isInYard) {
-                delay(380)
+                delay(720)
                 soundManager.playTokenMove()
                 updatePlayerTokenStep(player.color, tokenId, 0)
             } else {
                 for (s in (startStep + 1)..targetStep) {
-                    delay(260)
+                    delay(520)
                     soundManager.playTokenMove()
                     updatePlayerTokenStep(player.color, tokenId, s)
                 }
             }
 
-            delay(180)
+            delay(350)
             handleMoveCompletion(player, tokenId, targetStep, dice)
         }
     }

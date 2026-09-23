@@ -61,12 +61,12 @@ fun LudoBoardView(
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "sciFiBoardAnim")
 
-    // Pulsing energy glow for movable tokens and active systems
+    // Pulsing energy glow for movable tokens and active systems (0.5x speed)
     val pulseGlow by infiniteTransition.animateFloat(
         initialValue = 0.9f,
         targetValue = 1.35f,
         animationSpec = infiniteRepeatable(
-            animation = tween(500, easing = FastOutSlowInEasing),
+            animation = tween(1000, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         ),
         label = "pulseGlow"
@@ -77,7 +77,7 @@ fun LudoBoardView(
         initialValue = 0f,
         targetValue = 360f,
         animationSpec = infiniteRepeatable(
-            animation = tween(12000, easing = LinearEasing),
+            animation = tween(18000, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
         ),
         label = "reactorRotation"
@@ -88,18 +88,18 @@ fun LudoBoardView(
         initialValue = 360f,
         targetValue = 0f,
         animationSpec = infiniteRepeatable(
-            animation = tween(18000, easing = LinearEasing),
+            animation = tween(24000, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
         ),
         label = "shieldRotation"
     )
 
-    // Animated continuous rotation for the energy vortex spinning under movable tokens
+    // Animated continuous rotation for the energy vortex spinning under movable tokens (0.5x speed)
     val tokenSpinAngle by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 360f,
         animationSpec = infiniteRepeatable(
-            animation = tween(2200, easing = LinearEasing),
+            animation = tween(4400, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
         ),
         label = "tokenSpinAngle"
