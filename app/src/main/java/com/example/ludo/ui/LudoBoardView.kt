@@ -94,6 +94,17 @@ fun LudoBoardView(
         label = "shieldRotation"
     )
 
+    // Animated continuous rotation for the energy vortex spinning under movable tokens
+    val tokenSpinAngle by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2200, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "tokenSpinAngle"
+    )
+
     BoxWithConstraints(
         modifier = modifier
             .fillMaxWidth()
@@ -177,7 +188,7 @@ fun LudoBoardView(
                 }
         ) {
             drawSciFiLudoBoard(cellSize, reactorRotation, shieldRotation)
-            drawSciFiTokens(tokenScreenPositions, cellSize, pulseGlow)
+            drawSciFiTokens(tokenScreenPositions, cellSize, pulseGlow, tokenSpinAngle)
         }
     }
 }
@@ -935,88 +946,129 @@ private fun DrawScope.drawCornerBrackets(
 }
 
 /**
- * Draws High-Tech Levitation Cyber-Drone Tokens
+ * Draws High-Tech Levitation Cyber-Drone Tokens.
+ * Features:
+ * - Enlarged base size for bold visual clarity
+ * - Noticeable scale-up for movable tokens after dice roll ("নিজ নিজ জায়গা থেকে অন্যান্য গুটি থেকে বড় দেখাবে")
+ * - Spinning circular holographic energy vortex underneath active tokens ("গুটির নিচে কিছু একটা গোল করে ঘুরবে")
+ * - 3D multi-layered orb aesthetic with metallic titanium crown, glowing plasma core, and glass specular dome
  */
 private fun DrawScope.drawSciFiTokens(
     tokens: List<TokenScreenPosition>,
     cellSize: Float,
-    pulseGlow: Float
+    pulseGlow: Float,
+    tokenSpinAngle: Float
 ) {
-    val baseRadius = cellSize * 0.38f
+    // Generous base size so tokens look prominent and clearly visible
+    val defaultRadius = cellSize * 0.44f
 
     tokens.forEach { item ->
         val center = item.center
         val color = item.player.color
 
-        // 1. Pulsing Holographic Targeting Halo for movable tokens
-        if (item.isMovable) {
-            val haloRadius = baseRadius * (1.15f * pulseGlow)
+        // When movable, scale up noticeably larger than all other tokens on the board!
+        val currentRadius = if (item.isMovable) {
+            defaultRadius * 1.32f * (0.95f + 0.08f * ((pulseGlow - 0.9f) / 0.45f))
+        } else {
+            defaultRadius
+        }
 
-            // Outer Radial Pulse Wave
+        // 1. Spinning Circular Energy Vortex beneath active movable tokens ("গুটির নিচে গোল করে ঘুরবে")
+        if (item.isMovable) {
+            val vortexRadius = currentRadius * 1.45f
+
+            // Radiant ground plasma flare
             drawCircle(
-                color = color.neonGlow.copy(alpha = 0.30f),
-                radius = haloRadius * 1.35f,
+                color = color.neonGlow.copy(alpha = 0.35f),
+                radius = vortexRadius * 1.15f,
                 center = center
             )
 
-            // Radiant Neon Target Ring
-            drawCircle(
-                color = color.neonGlow.copy(alpha = 0.9f),
-                radius = haloRadius,
-                center = center,
-                style = Stroke(
-                    width = 2.5f,
-                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(haloRadius * 0.4f, haloRadius * 0.2f))
+            // Outer rotating segmented energy ring (clockwise rotation)
+            for (i in 0 until 4) {
+                drawArc(
+                    color = color.neonGlow,
+                    startAngle = tokenSpinAngle + i * 90f,
+                    sweepAngle = 44f,
+                    useCenter = false,
+                    topLeft = Offset(center.x - vortexRadius, center.y - vortexRadius),
+                    size = Size(vortexRadius * 2f, vortexRadius * 2f),
+                    style = Stroke(width = 2.5f, cap = StrokeCap.Round)
                 )
-            )
+            }
 
-            // 4 Targeting Reticle Brackets around the token
-            val reticleArm = haloRadius * 0.35f
-            val rD = haloRadius * 1.1f
-            drawLine(color.neonGlow, Offset(center.x - rD, center.y), Offset(center.x - rD + reticleArm, center.y), 2f)
-            drawLine(color.neonGlow, Offset(center.x + rD, center.y), Offset(center.x + rD - reticleArm, center.y), 2f)
-            drawLine(color.neonGlow, Offset(center.x, center.y - rD), Offset(center.x, center.y - rD + reticleArm), 2f)
-            drawLine(color.neonGlow, Offset(center.x, center.y + rD), Offset(center.x, center.y + rD - reticleArm), 2f)
+            // Inner counter-rotating halo ring (counter-clockwise rotation)
+            val innerVortex = vortexRadius * 0.76f
+            for (i in 0 until 4) {
+                drawArc(
+                    color = Color.White.copy(alpha = 0.85f),
+                    startAngle = -tokenSpinAngle * 1.4f + i * 90f + 25f,
+                    sweepAngle = 30f,
+                    useCenter = false,
+                    topLeft = Offset(center.x - innerVortex, center.y - innerVortex),
+                    size = Size(innerVortex * 2f, innerVortex * 2f),
+                    style = Stroke(width = 1.8f, cap = StrokeCap.Round)
+                )
+            }
+
+            // 4 rotating orbital power particles
+            val rad = Math.toRadians(tokenSpinAngle.toDouble())
+            for (i in 0 until 4) {
+                val a = rad + i * (Math.PI / 2.0)
+                val px = (center.x + cos(a) * vortexRadius).toFloat()
+                val py = (center.y + sin(a) * vortexRadius).toFloat()
+                drawCircle(color = Color.White, radius = currentRadius * 0.12f, center = Offset(px, py))
+                drawCircle(color = color.neonGlow, radius = currentRadius * 0.07f, center = Offset(px, py))
+            }
+
+            // Outer targeting reticle brackets
+            val reticleArm = currentRadius * 0.32f
+            val rD = vortexRadius * 1.15f
+            drawLine(color.neonGlow, Offset(center.x - rD, center.y), Offset(center.x - rD + reticleArm, center.y), 2.2f)
+            drawLine(color.neonGlow, Offset(center.x + rD, center.y), Offset(center.x + rD - reticleArm, center.y), 2.2f)
+            drawLine(color.neonGlow, Offset(center.x, center.y - rD), Offset(center.x, center.y - rD + reticleArm), 2.2f)
+            drawLine(color.neonGlow, Offset(center.x, center.y + rD), Offset(center.x, center.y + rD - reticleArm), 2.2f)
         }
 
-        // 2. Projected Ground Glow & Deep Levitation Shadow
+        // 2. Projected Ground Glow & 3D Levitation Shadow
+        val shadowOffsetY = if (item.isMovable) 6.5f else 3f
         drawCircle(
-            color = color.neonGlow.copy(alpha = 0.25f),
-            radius = baseRadius * 1.1f,
-            center = Offset(center.x, center.y + 3f)
+            color = color.neonGlow.copy(alpha = if (item.isMovable) 0.40f else 0.20f),
+            radius = currentRadius * 1.12f,
+            center = Offset(center.x, center.y + shadowOffsetY * 0.7f)
         )
         drawCircle(
-            color = Color(0xFF03070C).copy(alpha = 0.55f),
-            radius = baseRadius * 0.95f,
-            center = Offset(center.x + 1.5f, center.y + 4.5f)
+            color = Color(0xFF03070C).copy(alpha = if (item.isMovable) 0.65f else 0.45f),
+            radius = currentRadius * 0.95f,
+            center = Offset(center.x + 1.5f, center.y + shadowOffsetY)
         )
 
         // 3. Cyber Titanium / Precision Armor Outer Rim
         drawCircle(
             brush = Brush.radialGradient(
-                colors = listOf(Color(0xFFE2E8F0), Color(0xFF64748B), Color(0xFF1E293B)),
-                center = Offset(center.x - baseRadius * 0.35f, center.y - baseRadius * 0.35f),
-                radius = baseRadius * 1.4f
+                colors = listOf(Color(0xFFFFFFFF), Color(0xFF94A3B8), Color(0xFF1E293B)),
+                center = Offset(center.x - currentRadius * 0.35f, center.y - currentRadius * 0.35f),
+                radius = currentRadius * 1.4f
             ),
-            radius = baseRadius,
+            radius = currentRadius,
             center = center
         )
 
         // Outer Rim Cyber Seam
         drawCircle(
-            color = Color.White.copy(alpha = 0.85f),
-            radius = baseRadius,
+            color = Color.White.copy(alpha = 0.92f),
+            radius = currentRadius,
             center = center,
-            style = Stroke(width = 1.2f)
+            style = Stroke(width = 1.3f)
         )
 
         // 4. Glowing Plasma Energy Core (Player Color)
-        val plasmaRadius = baseRadius * 0.78f
+        val plasmaRadius = currentRadius * 0.78f
         drawCircle(
             brush = Brush.radialGradient(
-                colors = listOf(color.secondary, color.primary, color.darkCore),
+                colors = listOf(color.neonGlow, color.secondary, color.primary, color.darkCore),
                 center = Offset(center.x - plasmaRadius * 0.25f, center.y - plasmaRadius * 0.25f),
-                radius = plasmaRadius * 1.3f
+                radius = plasmaRadius * 1.35f
             ),
             radius = plasmaRadius,
             center = center
@@ -1030,22 +1082,27 @@ private fun DrawScope.drawSciFiTokens(
             style = Stroke(width = 1.5f)
         )
 
-        // 5. High-Specular Glass Top Reflection (Holographic Orb highlight)
-        val specR = plasmaRadius * 0.42f
+        // 5. High-Specular Glass Top Reflection (3D Holographic Orb Dome)
+        val specR = plasmaRadius * 0.45f
         drawCircle(
             brush = Brush.radialGradient(
-                colors = listOf(Color.White, color.secondary.copy(alpha = 0.7f), Color.Transparent),
+                colors = listOf(Color.White, color.secondary.copy(alpha = 0.8f), Color.Transparent),
                 center = Offset(center.x - specR * 0.45f, center.y - specR * 0.5f),
-                radius = specR * 1.2f
+                radius = specR * 1.25f
             ),
             radius = specR,
             center = Offset(center.x - plasmaRadius * 0.22f, center.y - plasmaRadius * 0.22f)
         )
 
-        // 6. Central Quantum Node (High-Tech Power Beacon)
+        // 6. Central Quantum Power Core Node
         drawCircle(
             color = Color.White,
-            radius = baseRadius * 0.16f,
+            radius = currentRadius * 0.18f,
+            center = center
+        )
+        drawCircle(
+            color = color.neonGlow,
+            radius = currentRadius * 0.09f,
             center = center
         )
     }

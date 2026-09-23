@@ -170,38 +170,61 @@ fun LudoScreen(viewModel: LudoViewModel) {
 
             Spacer(modifier = Modifier.height(6.dp))
 
-            // Top Player Cards (Red [top-left] and Green [top-right])
+            // Top Player Units (Red [top-left] and Green [top-right])
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 val pRed = state.players.find { it.color == PlayerColor.RED }
                 val pGreen = state.players.find { it.color == PlayerColor.GREEN }
 
+                // Red quadrant (Top-Left): Profile Card + Distinct Dice Station
                 pRed?.let { p ->
                     val idx = state.players.indexOf(p)
-                    PlayerInfoCard(
-                        player = p,
-                        isActive = state.activePlayerIndex == idx,
-                        turnPhase = state.turnPhase,
-                        diceValue = state.playerDiceValues[p.color] ?: 1,
-                        onDiceClick = { viewModel.onPlayerDiceClicked(p.color) },
-                        diceOnRight = true,
+                    val isActive = state.activePlayerIndex == idx
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
                         modifier = Modifier.weight(1f)
-                    )
+                    ) {
+                        PlayerInfoCard(
+                            player = p,
+                            isActive = isActive,
+                            modifier = Modifier.weight(1f)
+                        )
+                        CornerDiceBox(
+                            player = p,
+                            isActive = isActive,
+                            diceValue = state.playerDiceValues[p.color] ?: 1,
+                            turnPhase = state.turnPhase,
+                            onDiceClick = { viewModel.onPlayerDiceClicked(p.color) }
+                        )
+                    }
                 } ?: Spacer(modifier = Modifier.weight(1f))
 
+                // Green quadrant (Top-Right): Distinct Dice Station + Profile Card
                 pGreen?.let { p ->
                     val idx = state.players.indexOf(p)
-                    PlayerInfoCard(
-                        player = p,
-                        isActive = state.activePlayerIndex == idx,
-                        turnPhase = state.turnPhase,
-                        diceValue = state.playerDiceValues[p.color] ?: 1,
-                        onDiceClick = { viewModel.onPlayerDiceClicked(p.color) },
-                        diceOnRight = false,
+                    val isActive = state.activePlayerIndex == idx
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
                         modifier = Modifier.weight(1f)
-                    )
+                    ) {
+                        CornerDiceBox(
+                            player = p,
+                            isActive = isActive,
+                            diceValue = state.playerDiceValues[p.color] ?: 1,
+                            turnPhase = state.turnPhase,
+                            onDiceClick = { viewModel.onPlayerDiceClicked(p.color) }
+                        )
+                        PlayerInfoCard(
+                            player = p,
+                            isActive = isActive,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
                 } ?: Spacer(modifier = Modifier.weight(1f))
             }
 
@@ -220,38 +243,61 @@ fun LudoScreen(viewModel: LudoViewModel) {
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Bottom Player Cards (Blue [bottom-left] and Yellow [bottom-right])
+            // Bottom Player Units (Blue [bottom-left] and Yellow [bottom-right])
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 val pBlue = state.players.find { it.color == PlayerColor.BLUE }
                 val pYellow = state.players.find { it.color == PlayerColor.YELLOW }
 
+                // Blue quadrant (Bottom-Left): Profile Card + Distinct Dice Station
                 pBlue?.let { p ->
                     val idx = state.players.indexOf(p)
-                    PlayerInfoCard(
-                        player = p,
-                        isActive = state.activePlayerIndex == idx,
-                        turnPhase = state.turnPhase,
-                        diceValue = state.playerDiceValues[p.color] ?: 1,
-                        onDiceClick = { viewModel.onPlayerDiceClicked(p.color) },
-                        diceOnRight = true,
+                    val isActive = state.activePlayerIndex == idx
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
                         modifier = Modifier.weight(1f)
-                    )
+                    ) {
+                        PlayerInfoCard(
+                            player = p,
+                            isActive = isActive,
+                            modifier = Modifier.weight(1f)
+                        )
+                        CornerDiceBox(
+                            player = p,
+                            isActive = isActive,
+                            diceValue = state.playerDiceValues[p.color] ?: 1,
+                            turnPhase = state.turnPhase,
+                            onDiceClick = { viewModel.onPlayerDiceClicked(p.color) }
+                        )
+                    }
                 } ?: Spacer(modifier = Modifier.weight(1f))
 
+                // Yellow quadrant (Bottom-Right): Distinct Dice Station + Profile Card
                 pYellow?.let { p ->
                     val idx = state.players.indexOf(p)
-                    PlayerInfoCard(
-                        player = p,
-                        isActive = state.activePlayerIndex == idx,
-                        turnPhase = state.turnPhase,
-                        diceValue = state.playerDiceValues[p.color] ?: 1,
-                        onDiceClick = { viewModel.onPlayerDiceClicked(p.color) },
-                        diceOnRight = false,
+                    val isActive = state.activePlayerIndex == idx
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
                         modifier = Modifier.weight(1f)
-                    )
+                    ) {
+                        CornerDiceBox(
+                            player = p,
+                            isActive = isActive,
+                            diceValue = state.playerDiceValues[p.color] ?: 1,
+                            turnPhase = state.turnPhase,
+                            onDiceClick = { viewModel.onPlayerDiceClicked(p.color) }
+                        )
+                        PlayerInfoCard(
+                            player = p,
+                            isActive = isActive,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
                 } ?: Spacer(modifier = Modifier.weight(1f))
             }
 

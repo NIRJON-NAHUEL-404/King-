@@ -9,6 +9,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -46,15 +47,15 @@ import androidx.compose.ui.unit.sp
 import com.example.ludo.model.Player
 import com.example.ludo.viewmodel.TurnPhase
 
+/**
+ * Dedicated Standalone Player Profile Card (Separate from Dice).
+ * Displays player avatar, name, rank, and finished tokens count.
+ */
 @Composable
 fun PlayerInfoCard(
     player: Player,
     isActive: Boolean,
-    turnPhase: TurnPhase = TurnPhase.WAITING_FOR_ROLL,
-    diceValue: Int = 1,
-    onDiceClick: () -> Unit = {},
-    modifier: Modifier = Modifier,
-    diceOnRight: Boolean = true
+    modifier: Modifier = Modifier
 ) {
     val color = player.color
 
@@ -70,158 +71,194 @@ fun PlayerInfoCard(
     )
 
     val borderColor by animateColorAsState(
-        targetValue = if (isActive) color.primary else Color.Transparent,
+        targetValue = if (isActive) color.neonGlow else Color(0xFF1E293B).copy(alpha = 0.4f),
         label = "borderColor"
     )
 
     Surface(
-        shape = RoundedCornerShape(14.dp),
-        color = if (isActive) color.lightContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+        shape = RoundedCornerShape(12.dp),
+        color = if (isActive) color.cyberPlate else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
         tonalElevation = if (isActive) 6.dp else 1.dp,
         modifier = modifier
             .testTag("player_card_${player.color.name.lowercase()}")
             .scale(pulseScale)
             .border(
-                width = if (isActive) 2.dp else 0.5.dp,
-                color = if (isActive) borderColor else MaterialTheme.colorScheme.outlineVariant,
-                shape = RoundedCornerShape(14.dp)
+                width = if (isActive) 1.8.dp else 0.8.dp,
+                color = borderColor,
+                shape = RoundedCornerShape(12.dp)
             )
-            .shadow(if (isActive) 6.dp else 1.dp, RoundedCornerShape(14.dp))
+            .shadow(if (isActive) 6.dp else 1.dp, RoundedCornerShape(12.dp))
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
-                .padding(horizontal = 6.dp, vertical = 6.dp)
+                .padding(horizontal = 6.dp, vertical = 5.dp)
                 .fillMaxWidth()
         ) {
-            val playerAvatar = @Composable {
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .size(30.dp)
-                        .clip(CircleShape)
-                        .background(
-                            Brush.radialGradient(
-                                colors = listOf(color.secondary, color.darkShade)
-                            )
+            // Player Avatar
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .size(28.dp)
+                    .clip(CircleShape)
+                    .background(
+                        Brush.radialGradient(
+                            colors = listOf(color.secondary, color.darkCore)
                         )
-                        .border(1.5.dp, Color.White, CircleShape)
-                ) {
-                    Icon(
-                        imageVector = if (player.isBot) Icons.Default.Android else Icons.Default.Person,
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.size(16.dp)
                     )
-                }
-            }
-
-            val playerDetails = @Composable {
-                Column(modifier = Modifier.weight(1f)) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(
-                            text = player.name,
-                            style = MaterialTheme.typography.labelMedium.copy(
-                                fontWeight = if (isActive) FontWeight.Bold else FontWeight.Medium,
-                                fontSize = 11.5.sp
-                            ),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            color = if (isActive) color.darkShade else MaterialTheme.colorScheme.onSurface
-                        )
-
-                        if (player.rank != null) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    imageVector = Icons.Default.EmojiEvents,
-                                    contentDescription = "Rank",
-                                    tint = Color(0xFFFFB300),
-                                    modifier = Modifier.size(13.dp)
-                                )
-                                Text(
-                                    text = "#${player.rank}",
-                                    style = MaterialTheme.typography.labelSmall.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 10.sp,
-                                        color = Color(0xFFFF8F00)
-                                    )
-                                )
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(2.dp))
-
-                    // Finished tokens indicators (4 dots)
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(2.5.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        val finishedCount = player.finishedTokensCount
-                        for (i in 0 until 4) {
-                            Box(
-                                modifier = Modifier
-                                    .size(5.5.dp)
-                                    .clip(CircleShape)
-                                    .background(
-                                        if (i < finishedCount) color.primary else Color(0xFFCFD8DC)
-                                    )
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.width(3.dp))
-                        Text(
-                            text = if (isActive) {
-                                when (turnPhase) {
-                                    TurnPhase.WAITING_FOR_ROLL -> if (player.isBot) "Rolling..." else "Tap Dice!"
-                                    TurnPhase.ROLLING -> "Rolling..."
-                                    TurnPhase.SELECTING_TOKEN -> "Move"
-                                    else -> "Turn"
-                                }
-                            } else {
-                                "$finishedCount/4"
-                            },
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 9.sp,
-                                fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal,
-                                color = if (isActive) color.darkShade else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        )
-                    }
-                }
-            }
-
-            val cornerDice = @Composable {
-                DiceView(
-                    diceValue = diceValue,
-                    activeColor = color,
-                    turnPhase = turnPhase,
-                    isBot = player.isBot,
-                    isActivePlayer = isActive,
-                    showLabel = true,
-                    diceSize = 42.dp,
-                    diceTag = "dice_${player.color.name.lowercase()}",
-                    onDiceClick = onDiceClick
+                    .border(1.2.dp, Color.White, CircleShape)
+            ) {
+                Icon(
+                    imageVector = if (player.isBot) Icons.Default.Android else Icons.Default.Person,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(15.dp)
                 )
             }
 
-            if (diceOnRight) {
-                playerAvatar()
-                Spacer(modifier = Modifier.width(6.dp))
-                playerDetails()
-                Spacer(modifier = Modifier.width(6.dp))
-                cornerDice()
-            } else {
-                cornerDice()
-                Spacer(modifier = Modifier.width(6.dp))
-                playerDetails()
-                Spacer(modifier = Modifier.width(6.dp))
-                playerAvatar()
+            Spacer(modifier = Modifier.width(6.dp))
+
+            // Player Name and Tokens Progress
+            Column(modifier = Modifier.weight(1f)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = player.name,
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            fontWeight = if (isActive) FontWeight.Bold else FontWeight.Medium,
+                            fontSize = 11.sp
+                        ),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        color = if (isActive) Color.White else MaterialTheme.colorScheme.onSurface
+                    )
+
+                    if (player.rank != null) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.EmojiEvents,
+                                contentDescription = "Rank",
+                                tint = Color(0xFFFFD600),
+                                modifier = Modifier.size(12.dp)
+                            )
+                            Text(
+                                text = "#${player.rank}",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 9.5.sp,
+                                    color = Color(0xFFFFD600)
+                                )
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(2.dp))
+
+                // Finished tokens indicators (4 dots)
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(2.5.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    val finishedCount = player.finishedTokensCount
+                    for (i in 0 until 4) {
+                        Box(
+                            modifier = Modifier
+                                .size(5.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    if (i < finishedCount) color.neonGlow else Color(0xFF64748B)
+                                )
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(3.dp))
+                    Text(
+                        text = "$finishedCount/4",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontSize = 8.5.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (isActive) color.neonGlow else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    )
+                }
             }
         }
+    }
+}
+
+/**
+ * Dedicated Standalone Corner Dice Box.
+ * Separated from the player profile card for clean, authentic Ludo look.
+ */
+@Composable
+fun CornerDiceBox(
+    player: Player,
+    isActive: Boolean,
+    diceValue: Int,
+    turnPhase: TurnPhase,
+    onDiceClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val color = player.color
+
+    val infiniteTransition = rememberInfiniteTransition(label = "diceStationPulse")
+    val pulseScale by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = if (isActive && turnPhase == TurnPhase.WAITING_FOR_ROLL) 1.08f else 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(500, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pulseScale"
+    )
+
+    val canRoll = isActive && turnPhase == TurnPhase.WAITING_FOR_ROLL && !player.isBot
+    val canTapToMove = isActive && turnPhase == TurnPhase.SELECTING_TOKEN && !player.isBot
+
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier
+            .scale(if (canRoll) pulseScale else 1f)
+            .shadow(
+                elevation = if (canRoll) 8.dp else if (isActive) 4.dp else 1.dp,
+                shape = RoundedCornerShape(12.dp),
+                spotColor = if (isActive) color.neonGlow else Color.Black
+            )
+            .clip(RoundedCornerShape(12.dp))
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = if (isActive) {
+                        listOf(color.cyberPlate, Color(0xFF09101A))
+                    } else {
+                        listOf(Color(0xFF16202C), Color(0xFF0C131D))
+                    }
+                )
+            )
+            .border(
+                width = if (canRoll) 2.dp else if (isActive) 1.2.dp else 0.8.dp,
+                color = when {
+                    canRoll -> color.neonGlow
+                    isActive -> color.primary.copy(alpha = 0.8f)
+                    else -> Color(0xFF1E2F42)
+                },
+                shape = RoundedCornerShape(12.dp)
+            )
+            .padding(4.dp)
+    ) {
+        DiceView(
+            diceValue = diceValue,
+            activeColor = color,
+            turnPhase = turnPhase,
+            isBot = player.isBot,
+            isActivePlayer = isActive,
+            showLabel = true,
+            diceSize = 40.dp,
+            diceTag = "dice_${player.color.name.lowercase()}",
+            onDiceClick = onDiceClick
+        )
     }
 }
