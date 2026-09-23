@@ -1,6 +1,7 @@
 package com.example.ludo.ui
 
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -18,11 +19,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -38,6 +42,15 @@ import kotlin.math.cos
 import kotlin.math.hypot
 import kotlin.math.sin
 
+/**
+ * High-tech Digital Sci-Fi / Cyber Ludo Board.
+ * Features:
+ * - Obsidian holo-chassis with circuit traces and cybernetic corner brackets
+ * - Quantum launch bays (docking stations) with reticle markings & neon energy containment
+ * - Holographic glass track pads with illuminated neon energy corridors
+ * - Radiant Quantum Singularity Reactor in the center with rotating energy arcs
+ * - Levitation cyber-drone tokens with high-specular plasma cores and targeting reticles
+ */
 @Composable
 fun LudoBoardView(
     players: List<Player>,
@@ -46,7 +59,9 @@ fun LudoBoardView(
     onTokenClicked: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val infiniteTransition = rememberInfiniteTransition(label = "tokenPulse")
+    val infiniteTransition = rememberInfiniteTransition(label = "sciFiBoardAnim")
+
+    // Pulsing energy glow for movable tokens and active systems
     val pulseGlow by infiniteTransition.animateFloat(
         initialValue = 0.9f,
         targetValue = 1.35f,
@@ -57,13 +72,35 @@ fun LudoBoardView(
         label = "pulseGlow"
     )
 
+    // Rotating holographic reactor core in center
+    val reactorRotation by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(12000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "reactorRotation"
+    )
+
+    // Secondary subtle reverse rotation for energy shield ring
+    val shieldRotation by infiniteTransition.animateFloat(
+        initialValue = 360f,
+        targetValue = 0f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(18000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "shieldRotation"
+    )
+
     BoxWithConstraints(
         modifier = modifier
             .fillMaxWidth()
             .aspectRatio(1f)
             .padding(6.dp)
-            .shadow(8.dp, RoundedCornerShape(18.dp))
-            .clip(RoundedCornerShape(18.dp))
+            .shadow(16.dp, RoundedCornerShape(20.dp), spotColor = Color(0xFF00E5FF))
+            .clip(RoundedCornerShape(20.dp))
             .testTag("ludo_board_canvas")
     ) {
         val boardSize = constraints.maxWidth.toFloat()
@@ -116,7 +153,6 @@ fun LudoBoardView(
                 .aspectRatio(1f)
                 .pointerInput(tokenScreenPositions, activePlayer) {
                     detectTapGestures { tapOffset ->
-                        // Find closest movable token first, then any token of active player
                         var tappedToken: TokenScreenPosition? = null
                         var minDistance = Float.MAX_VALUE
                         val hitRadius = cellSize * 0.75f
@@ -140,8 +176,8 @@ fun LudoBoardView(
                     }
                 }
         ) {
-            drawLudoBoard(cellSize)
-            drawTokens(tokenScreenPositions, cellSize, pulseGlow)
+            drawSciFiLudoBoard(cellSize, reactorRotation, shieldRotation)
+            drawSciFiTokens(tokenScreenPositions, cellSize, pulseGlow)
         }
     }
 }
@@ -153,238 +189,264 @@ private data class TokenScreenPosition(
     val isMovable: Boolean
 )
 
-private fun DrawScope.drawLudoBoard(cellSize: Float) {
-    // 1. Board background
-    drawRect(color = Color(0xFFFAF7EE), size = size)
+/**
+ * Draws the master Digital Sci-Fi Holo-Board
+ */
+private fun DrawScope.drawSciFiLudoBoard(
+    cellSize: Float,
+    reactorRotation: Float,
+    shieldRotation: Float
+) {
+    // 1. Deep Space Cyber Chassis Background
+    drawRect(
+        brush = Brush.radialGradient(
+            colors = listOf(Color(0xFF0F1A2A), Color(0xFF070D16), Color(0xFF03070C)),
+            center = center,
+            radius = size.width * 0.75f
+        ),
+        size = size
+    )
 
-    val boardGridColor = Color(0xFFDCD6C8)
-    val starColor = Color(0xFFFFB300)
+    // 2. Faint Digital Matrix / Circuit Grid across entire background
+    drawCircuitBackgroundGrid(cellSize)
 
-    // 2. Draw 4 Yards (6x6 cells each)
-    drawYard(0f, 0f, cellSize, PlayerColor.RED)
-    drawYard(9 * cellSize, 0f, cellSize, PlayerColor.GREEN)
-    drawYard(9 * cellSize, 9 * cellSize, cellSize, PlayerColor.YELLOW)
-    drawYard(0f, 9 * cellSize, cellSize, PlayerColor.BLUE)
+    // 3. Draw 4 Cyber Command Hubs (Yards)
+    drawCyberYard(0f, 0f, cellSize, PlayerColor.RED)
+    drawCyberYard(9 * cellSize, 0f, cellSize, PlayerColor.GREEN)
+    drawCyberYard(9 * cellSize, 9 * cellSize, cellSize, PlayerColor.YELLOW)
+    drawCyberYard(0f, 9 * cellSize, cellSize, PlayerColor.BLUE)
 
-    // 3. Draw Track cells grid (horizontal & vertical arms)
-    // Vertical corridor (Cols 6, 7, 8; Rows 0..5 and 9..14)
+    // 4. Draw Track Cells Grid (Horizontal & Vertical Arms)
+    val trackBorderColor = Color(0xFFB0BEC5)
+    val trackDotColor = Color(0xFF90A4AE)
+
+    // Vertical corridors
     for (r in 0..5) {
         for (c in 6..8) {
-            drawTrackCell(r, c, cellSize, boardGridColor)
+            drawSciFiTrackCell(r, c, cellSize, trackBorderColor, trackDotColor)
         }
     }
     for (r in 9..14) {
         for (c in 6..8) {
-            drawTrackCell(r, c, cellSize, boardGridColor)
+            drawSciFiTrackCell(r, c, cellSize, trackBorderColor, trackDotColor)
         }
     }
 
-    // Horizontal corridor (Rows 6, 7, 8; Cols 0..5 and 9..14)
+    // Horizontal corridors
     for (r in 6..8) {
         for (c in 0..5) {
-            drawTrackCell(r, c, cellSize, boardGridColor)
+            drawSciFiTrackCell(r, c, cellSize, trackBorderColor, trackDotColor)
         }
     }
     for (r in 6..8) {
         for (c in 9..14) {
-            drawTrackCell(r, c, cellSize, boardGridColor)
+            drawSciFiTrackCell(r, c, cellSize, trackBorderColor, trackDotColor)
         }
     }
 
-    // 4. Color the Home Corridors
-    // Red Home Column: Row 7, Cols 1..5
-    for (c in 1..5) {
-        drawRect(
-            color = PlayerColor.RED.primary,
-            topLeft = Offset(c * cellSize, 7 * cellSize),
-            size = Size(cellSize, cellSize)
-        )
-        drawRect(
-            color = Color.White.copy(alpha = 0.3f),
-            topLeft = Offset(c * cellSize, 7 * cellSize),
-            size = Size(cellSize, cellSize),
-            style = Stroke(width = 1f)
-        )
-    }
+    // 5. Draw Glowing Home Warp Corridors (Laser Runways)
+    drawCyberHomeCorridor(PlayerColor.RED, cellSize)
+    drawCyberHomeCorridor(PlayerColor.GREEN, cellSize)
+    drawCyberHomeCorridor(PlayerColor.YELLOW, cellSize)
+    drawCyberHomeCorridor(PlayerColor.BLUE, cellSize)
 
-    // Green Home Column: Col 7, Rows 1..5
-    for (r in 1..5) {
-        drawRect(
-            color = PlayerColor.GREEN.primary,
-            topLeft = Offset(7 * cellSize, r * cellSize),
-            size = Size(cellSize, cellSize)
-        )
-        drawRect(
-            color = Color.White.copy(alpha = 0.3f),
-            topLeft = Offset(7 * cellSize, r * cellSize),
-            size = Size(cellSize, cellSize),
-            style = Stroke(width = 1f)
-        )
-    }
+    // 6. Draw Glowing Launch / Spawn Portals (Start Cells)
+    drawSciFiStartCell(6, 1, cellSize, PlayerColor.RED, directionAngle = 0f)      // Moves Right
+    drawSciFiStartCell(1, 8, cellSize, PlayerColor.GREEN, directionAngle = 90f)    // Moves Down
+    drawSciFiStartCell(8, 13, cellSize, PlayerColor.YELLOW, directionAngle = 180f) // Moves Left
+    drawSciFiStartCell(13, 6, cellSize, PlayerColor.BLUE, directionAngle = 270f)   // Moves Up
 
-    // Yellow Home Column: Row 7, Cols 9..13
-    for (c in 9..13) {
-        drawRect(
-            color = PlayerColor.YELLOW.primary,
-            topLeft = Offset(c * cellSize, 7 * cellSize),
-            size = Size(cellSize, cellSize)
-        )
-        drawRect(
-            color = Color.White.copy(alpha = 0.3f),
-            topLeft = Offset(c * cellSize, 7 * cellSize),
-            size = Size(cellSize, cellSize),
-            style = Stroke(width = 1f)
-        )
-    }
-
-    // Blue Home Column: Col 7, Rows 9..13
-    for (r in 9..13) {
-        drawRect(
-            color = PlayerColor.BLUE.primary,
-            topLeft = Offset(7 * cellSize, r * cellSize),
-            size = Size(cellSize, cellSize)
-        )
-        drawRect(
-            color = Color.White.copy(alpha = 0.3f),
-            topLeft = Offset(7 * cellSize, r * cellSize),
-            size = Size(cellSize, cellSize),
-            style = Stroke(width = 1f)
-        )
-    }
-
-    // 5. Color the Start Cells
-    drawStartCell(6, 1, cellSize, PlayerColor.RED)
-    drawStartCell(1, 8, cellSize, PlayerColor.GREEN)
-    drawStartCell(8, 13, cellSize, PlayerColor.YELLOW)
-    drawStartCell(13, 6, cellSize, PlayerColor.BLUE)
-
-    // 6. Draw Safe Stars
-    val starCoords = listOf(Pair(2, 6), Pair(6, 12), Pair(12, 8), Pair(8, 2))
-    starCoords.forEach { (r, c) ->
-        drawStar(
+    // 7. Draw Holographic Safe Stars (Shield Checkpoints)
+    val safeStars = listOf(
+        Pair(2, 6),
+        Pair(6, 12),
+        Pair(12, 8),
+        Pair(8, 2)
+    )
+    safeStars.forEach { (r, c) ->
+        drawHoloShieldStar(
             center = Offset((c + 0.5f) * cellSize, (r + 0.5f) * cellSize),
-            radius = cellSize * 0.38f,
-            color = starColor
+            radius = cellSize * 0.40f,
+            shieldRotation = shieldRotation
         )
     }
 
-    // 7. Center Home Triangles (Rows 6..8, Cols 6..8 = 3x3 cells)
-    val centerTopLeft = Offset(6 * cellSize, 6 * cellSize)
-    val centerSize = 3 * cellSize
-    val centerPoint = Offset(centerTopLeft.x + centerSize / 2f, centerTopLeft.y + centerSize / 2f)
+    // 8. Draw Central Quantum Singularity Reactor (Finish Hub)
+    drawQuantumSingularityCore(cellSize, reactorRotation)
 
-    // Red Left Triangle
-    val redPath = Path().apply {
-        moveTo(centerTopLeft.x, centerTopLeft.y)
-        lineTo(centerPoint.x, centerPoint.y)
-        lineTo(centerTopLeft.x, centerTopLeft.y + centerSize)
-        close()
-    }
-    drawPath(redPath, PlayerColor.RED.primary)
-
-    // Green Top Triangle
-    val greenPath = Path().apply {
-        moveTo(centerTopLeft.x, centerTopLeft.y)
-        lineTo(centerPoint.x, centerPoint.y)
-        lineTo(centerTopLeft.x + centerSize, centerTopLeft.y)
-        close()
-    }
-    drawPath(greenPath, PlayerColor.GREEN.primary)
-
-    // Yellow Right Triangle
-    val yellowPath = Path().apply {
-        moveTo(centerTopLeft.x + centerSize, centerTopLeft.y)
-        lineTo(centerPoint.x, centerPoint.y)
-        lineTo(centerTopLeft.x + centerSize, centerTopLeft.y + centerSize)
-        close()
-    }
-    drawPath(yellowPath, PlayerColor.YELLOW.primary)
-
-    // Blue Bottom Triangle
-    val bluePath = Path().apply {
-        moveTo(centerTopLeft.x, centerTopLeft.y + centerSize)
-        lineTo(centerPoint.x, centerPoint.y)
-        lineTo(centerTopLeft.x + centerSize, centerTopLeft.y + centerSize)
-        close()
-    }
-    drawPath(bluePath, PlayerColor.BLUE.primary)
-
-    // Center Gold Emblem
-    drawCircle(color = Color(0xFFFFD54F), radius = cellSize * 0.45f, center = centerPoint)
-    drawCircle(color = Color(0xFFFFA000), radius = cellSize * 0.45f, center = centerPoint, style = Stroke(width = 2f))
-    drawStar(center = centerPoint, radius = cellSize * 0.28f, color = Color(0xFF6A1B9A))
-
-    // Outer board border
-    drawRect(
-        color = Color(0xFF37474F),
-        topLeft = Offset.Zero,
-        size = size,
-        style = Stroke(width = 3f)
-    )
+    // 9. Outer Sci-Fi Holo-Chassis Frame & Tech Brackets
+    drawSciFiFrame(cellSize)
 }
 
-private fun DrawScope.drawTrackCell(row: Int, col: Int, cellSize: Float, borderColor: Color) {
+/**
+ * Faint digital matrix traces
+ */
+private fun DrawScope.drawCircuitBackgroundGrid(cellSize: Float) {
+    val lineCol = Color(0xFF142436).copy(alpha = 0.35f)
+    for (i in 1..14) {
+        val p = i * cellSize
+        drawLine(
+            color = lineCol,
+            start = Offset(p, 0f),
+            end = Offset(p, size.height),
+            strokeWidth = 0.75f
+        )
+        drawLine(
+            color = lineCol,
+            start = Offset(0f, p),
+            end = Offset(size.width, p),
+            strokeWidth = 0.75f
+        )
+    }
+}
+
+/**
+ * Sleek Luminous Cyber White Crystal Track Pad
+ */
+private fun DrawScope.drawSciFiTrackCell(
+    row: Int,
+    col: Int,
+    cellSize: Float,
+    borderColor: Color,
+    dotColor: Color
+) {
     val topLeft = Offset(col * cellSize, row * cellSize)
-    drawRect(
-        color = Color(0xFFFFFFFF),
-        topLeft = topLeft,
-        size = Size(cellSize, cellSize)
+    val pad = 1.0f
+
+    // Luminous Cyber White Tile
+    drawRoundRect(
+        brush = Brush.verticalGradient(
+            colors = listOf(Color(0xFFFFFFFF), Color(0xFFEFF3F8)),
+            startY = topLeft.y,
+            endY = topLeft.y + cellSize
+        ),
+        topLeft = Offset(topLeft.x + pad, topLeft.y + pad),
+        size = Size(cellSize - 2 * pad, cellSize - 2 * pad),
+        cornerRadius = CornerRadius(cellSize * 0.14f, cellSize * 0.14f)
     )
-    drawRect(
+
+    // Top-edge subtle glassy specular sheen
+    drawLine(
+        color = Color.White,
+        start = Offset(topLeft.x + pad + 2f, topLeft.y + pad + 1f),
+        end = Offset(topLeft.x + cellSize - pad - 2f, topLeft.y + pad + 1f),
+        strokeWidth = 1f
+    )
+
+    // Cyber border
+    drawRoundRect(
         color = borderColor,
-        topLeft = topLeft,
-        size = Size(cellSize, cellSize),
-        style = Stroke(width = 1f)
+        topLeft = Offset(topLeft.x + pad, topLeft.y + pad),
+        size = Size(cellSize - 2 * pad, cellSize - 2 * pad),
+        cornerRadius = CornerRadius(cellSize * 0.14f, cellSize * 0.14f),
+        style = Stroke(width = 1.2f)
     )
+
+    // Center tech micro-circuit crosshair
+    val cx = (col + 0.5f) * cellSize
+    val cy = (row + 0.5f) * cellSize
+    val tick = cellSize * 0.08f
+    drawLine(color = dotColor, start = Offset(cx - tick, cy), end = Offset(cx + tick, cy), strokeWidth = 1.2f)
+    drawLine(color = dotColor, start = Offset(cx, cy - tick), end = Offset(cx, cy + tick), strokeWidth = 1.2f)
 }
 
-private fun DrawScope.drawStartCell(row: Int, col: Int, cellSize: Float, color: PlayerColor) {
-    val topLeft = Offset(col * cellSize, row * cellSize)
-    drawRect(
-        color = color.primary,
-        topLeft = topLeft,
-        size = Size(cellSize, cellSize)
+/**
+ * Cyber Yard / Quantum Docking Hub
+ */
+private fun DrawScope.drawCyberYard(
+    x: Float,
+    y: Float,
+    cellSize: Float,
+    color: PlayerColor
+) {
+    val yardSize = 6 * cellSize
+    val margin = 2f
+
+    // 1. Dark Armor Outer Plate
+    drawRoundRect(
+        brush = Brush.linearGradient(
+            colors = listOf(color.darkCore, Color(0xFF060B12), color.cyberPlate),
+            start = Offset(x, y),
+            end = Offset(x + yardSize, y + yardSize)
+        ),
+        topLeft = Offset(x + margin, y + margin),
+        size = Size(yardSize - 2 * margin, yardSize - 2 * margin),
+        cornerRadius = CornerRadius(cellSize * 0.35f, cellSize * 0.35f)
     )
-    drawRect(
-        color = Color.White.copy(alpha = 0.5f),
-        topLeft = topLeft,
-        size = Size(cellSize, cellSize),
+
+    // 2. Glowing Neon Edge Containment Rim
+    drawRoundRect(
+        color = color.primary.copy(alpha = 0.45f),
+        topLeft = Offset(x + margin, y + margin),
+        size = Size(yardSize - 2 * margin, yardSize - 2 * margin),
+        cornerRadius = CornerRadius(cellSize * 0.35f, cellSize * 0.35f),
         style = Stroke(width = 1.5f)
     )
-    // Inner arrow / circle
-    drawCircle(
-        color = Color.White,
-        radius = cellSize * 0.24f,
-        center = Offset((col + 0.5f) * cellSize, (row + 0.5f) * cellSize)
-    )
-    drawCircle(
-        color = color.primary,
-        radius = cellSize * 0.16f,
-        center = Offset((col + 0.5f) * cellSize, (row + 0.5f) * cellSize)
-    )
-}
 
-private fun DrawScope.drawYard(x: Float, y: Float, cellSize: Float, color: PlayerColor) {
-    val yardSize = 6 * cellSize
-
-    // Yard background
-    drawRect(
-        color = color.primary,
-        topLeft = Offset(x, y),
-        size = Size(yardSize, yardSize)
-    )
-
-    // Inner White Base Plate
-    val inset = cellSize * 0.8f
+    // 3. Inner Cyber Base Plate
+    val inset = cellSize * 0.75f
     val plateSize = yardSize - 2 * inset
+    val plateTopLeft = Offset(x + inset, y + inset)
+
     drawRoundRect(
-        color = Color.White,
-        topLeft = Offset(x + inset, y + inset),
+        brush = Brush.radialGradient(
+            colors = listOf(color.cyberPlate.copy(alpha = 0.95f), color.darkCore, Color(0xFF04080E)),
+            center = Offset(plateTopLeft.x + plateSize / 2f, plateTopLeft.y + plateSize / 2f),
+            radius = plateSize * 0.7f
+        ),
+        topLeft = plateTopLeft,
         size = Size(plateSize, plateSize),
-        cornerRadius = androidx.compose.ui.geometry.CornerRadius(cellSize * 0.6f, cellSize * 0.6f)
+        cornerRadius = CornerRadius(cellSize * 0.3f, cellSize * 0.3f)
     )
 
-    // 4 Token Yard Slots
+    // Inner Glowing Neon Rim
+    drawRoundRect(
+        color = color.primary.copy(alpha = 0.75f),
+        topLeft = plateTopLeft,
+        size = Size(plateSize, plateSize),
+        cornerRadius = CornerRadius(cellSize * 0.3f, cellSize * 0.3f),
+        style = Stroke(width = 1.5f)
+    )
+
+    // Center Holographic Radar Ring in the Yard
+    val yardCenter = Offset(x + yardSize / 2f, y + yardSize / 2f)
+    drawCircle(
+        color = color.primary.copy(alpha = 0.15f),
+        radius = cellSize * 1.6f,
+        center = yardCenter
+    )
+    drawCircle(
+        color = color.primary.copy(alpha = 0.35f),
+        radius = cellSize * 1.6f,
+        center = yardCenter,
+        style = Stroke(
+            width = 1.2f,
+            pathEffect = PathEffect.dashPathEffect(floatArrayOf(cellSize * 0.2f, cellSize * 0.15f))
+        )
+    )
+    drawCircle(
+        color = color.neonGlow.copy(alpha = 0.5f),
+        radius = cellSize * 0.5f,
+        center = yardCenter,
+        style = Stroke(width = 1f)
+    )
+
+    // Center Tech Cross
+    val crossLen = cellSize * 0.4f
+    drawLine(
+        color = color.neonGlow.copy(alpha = 0.6f),
+        start = Offset(yardCenter.x - crossLen, yardCenter.y),
+        end = Offset(yardCenter.x + crossLen, yardCenter.y),
+        strokeWidth = 1.2f
+    )
+    drawLine(
+        color = color.neonGlow.copy(alpha = 0.6f),
+        start = Offset(yardCenter.x, yardCenter.y - crossLen),
+        end = Offset(yardCenter.x, yardCenter.y + crossLen),
+        strokeWidth = 1.2f
+    )
+
+    // 4. The 4 Token Spawn Bays (Magnetic Docking Pods)
     val slotOffsets = listOf(
         Offset(x + 1.5f * cellSize, y + 1.5f * cellSize),
         Offset(x + 4.5f * cellSize, y + 1.5f * cellSize),
@@ -392,47 +454,490 @@ private fun DrawScope.drawYard(x: Float, y: Float, cellSize: Float, color: Playe
         Offset(x + 4.5f * cellSize, y + 4.5f * cellSize)
     )
 
+    val padRadius = cellSize * 0.72f
     slotOffsets.forEach { slotCenter ->
+        // Recessed Docking Well
         drawCircle(
-            color = color.lightContainer,
-            radius = cellSize * 0.65f,
+            brush = Brush.radialGradient(
+                colors = listOf(Color(0xFF03060B), color.darkCore, color.cyberPlate),
+                center = slotCenter,
+                radius = padRadius
+            ),
+            radius = padRadius,
             center = slotCenter
         )
+
+        // Outer Neon Containment Ring
         drawCircle(
-            color = color.primary,
-            radius = cellSize * 0.65f,
+            color = color.primary.copy(alpha = 0.85f),
+            radius = padRadius,
             center = slotCenter,
-            style = Stroke(width = 2.5f)
+            style = Stroke(width = 2f)
+        )
+
+        // Inner Power Coil Ring
+        drawCircle(
+            color = color.neonGlow.copy(alpha = 0.4f),
+            radius = padRadius * 0.75f,
+            center = slotCenter,
+            style = Stroke(width = 1f)
+        )
+
+        // Docking Reticle Crosshairs
+        val tick = padRadius * 0.35f
+        drawLine(
+            color = color.neonGlow.copy(alpha = 0.5f),
+            start = Offset(slotCenter.x - tick, slotCenter.y),
+            end = Offset(slotCenter.x + tick, slotCenter.y),
+            strokeWidth = 1f
+        )
+        drawLine(
+            color = color.neonGlow.copy(alpha = 0.5f),
+            start = Offset(slotCenter.x, slotCenter.y - tick),
+            end = Offset(slotCenter.x, slotCenter.y + tick),
+            strokeWidth = 1f
         )
     }
 
-    // Yard border
-    drawRect(
-        color = Color(0xFF263238),
+    // Corner Sci-Fi Tech Brackets on Yard perimeter
+    drawCornerBrackets(Offset(x + margin, y + margin), yardSize - 2 * margin, color.neonGlow, cellSize * 0.3f)
+}
+
+/**
+ * Glowing Neon Laser Runways (Home Corridors)
+ */
+private fun DrawScope.drawCyberHomeCorridor(color: PlayerColor, cellSize: Float) {
+    val pad = 1f
+    when (color) {
+        PlayerColor.RED -> {
+            // Row 7, Cols 1..5 (Moving Right ->)
+            for (c in 1..5) {
+                val tX = c * cellSize + pad
+                val tY = 7 * cellSize + pad
+                drawCyberRunwayCell(tX, tY, cellSize - 2 * pad, color, angle = 0f, stepIndex = c)
+            }
+        }
+        PlayerColor.GREEN -> {
+            // Col 7, Rows 1..5 (Moving Down v)
+            for (r in 1..5) {
+                val tX = 7 * cellSize + pad
+                val tY = r * cellSize + pad
+                drawCyberRunwayCell(tX, tY, cellSize - 2 * pad, color, angle = 90f, stepIndex = r)
+            }
+        }
+        PlayerColor.YELLOW -> {
+            // Row 7, Cols 9..13 (Moving Left <-)
+            for (c in 9..13) {
+                val tX = c * cellSize + pad
+                val tY = 7 * cellSize + pad
+                drawCyberRunwayCell(tX, tY, cellSize - 2 * pad, color, angle = 180f, stepIndex = 14 - c)
+            }
+        }
+        PlayerColor.BLUE -> {
+            // Col 7, Rows 9..13 (Moving Up ^)
+            for (r in 9..13) {
+                val tX = 7 * cellSize + pad
+                val tY = r * cellSize + pad
+                drawCyberRunwayCell(tX, tY, cellSize - 2 * pad, color, angle = 270f, stepIndex = 14 - r)
+            }
+        }
+    }
+}
+
+/**
+ * Individual cell on the home acceleration corridor
+ */
+private fun DrawScope.drawCyberRunwayCell(
+    x: Float,
+    y: Float,
+    size: Float,
+    color: PlayerColor,
+    angle: Float,
+    stepIndex: Int
+) {
+    val alphaFactor = 0.5f + (stepIndex / 5f) * 0.45f
+
+    // Glowing Neon Glass Base
+    drawRoundRect(
+        brush = Brush.verticalGradient(
+            colors = listOf(
+                color.primary.copy(alpha = alphaFactor * 0.75f),
+                color.darkCore.copy(alpha = 0.9f)
+            ),
+            startY = y,
+            endY = y + size
+        ),
         topLeft = Offset(x, y),
-        size = Size(yardSize, yardSize),
+        size = Size(size, size),
+        cornerRadius = CornerRadius(size * 0.15f, size * 0.15f)
+    )
+
+    // Radiant Neon Border
+    drawRoundRect(
+        color = color.neonGlow.copy(alpha = alphaFactor),
+        topLeft = Offset(x, y),
+        size = Size(size, size),
+        cornerRadius = CornerRadius(size * 0.15f, size * 0.15f),
         style = Stroke(width = 1.5f)
+    )
+
+    // Forward Acceleration Chevron (>>>)
+    val cx = x + size / 2f
+    val cy = y + size / 2f
+    val rad = Math.toRadians(angle.toDouble())
+    val forward = Offset(cos(rad).toFloat(), sin(rad).toFloat())
+    val perp = Offset(-sin(rad).toFloat(), cos(rad).toFloat())
+
+    val chevronPath = Path().apply {
+        val tip = Offset(cx + forward.x * size * 0.28f, cy + forward.y * size * 0.28f)
+        val wing1 = Offset(cx - forward.x * size * 0.18f + perp.x * size * 0.22f, cy - forward.y * size * 0.18f + perp.y * size * 0.22f)
+        val wing2 = Offset(cx - forward.x * size * 0.18f - perp.x * size * 0.22f, cy - forward.y * size * 0.18f - perp.y * size * 0.22f)
+        moveTo(wing1.x, wing1.y)
+        lineTo(tip.x, tip.y)
+        lineTo(wing2.x, wing2.y)
+    }
+
+    drawPath(
+        path = chevronPath,
+        color = Color.White.copy(alpha = 0.9f),
+        style = Stroke(width = 2.5f, cap = StrokeCap.Round)
     )
 }
 
-private fun DrawScope.drawStar(center: Offset, radius: Float, color: Color) {
+/**
+ * Launch Gate / Start Portal
+ */
+private fun DrawScope.drawSciFiStartCell(
+    row: Int,
+    col: Int,
+    cellSize: Float,
+    color: PlayerColor,
+    directionAngle: Float
+) {
+    val pad = 1f
+    val topLeft = Offset(col * cellSize + pad, row * cellSize + pad)
+    val size = cellSize - 2 * pad
+
+    // Energy portal pad
+    drawRoundRect(
+        brush = Brush.radialGradient(
+            colors = listOf(color.primary, color.darkCore),
+            center = Offset(topLeft.x + size / 2f, topLeft.y + size / 2f),
+            radius = size * 0.8f
+        ),
+        topLeft = topLeft,
+        size = Size(size, size),
+        cornerRadius = CornerRadius(size * 0.18f, size * 0.18f)
+    )
+
+    // Pulsing glowing border
+    drawRoundRect(
+        color = color.neonGlow,
+        topLeft = topLeft,
+        size = Size(size, size),
+        cornerRadius = CornerRadius(size * 0.18f, size * 0.18f),
+        style = Stroke(width = 2f)
+    )
+
+    // Concentric Launch Rings
+    val cx = topLeft.x + size / 2f
+    val cy = topLeft.y + size / 2f
+    drawCircle(
+        color = Color.White.copy(alpha = 0.35f),
+        radius = size * 0.38f,
+        center = Offset(cx, cy),
+        style = Stroke(width = 1f)
+    )
+    drawCircle(
+        color = Color.White,
+        radius = size * 0.22f,
+        center = Offset(cx, cy)
+    )
+    drawCircle(
+        color = color.darkCore,
+        radius = size * 0.12f,
+        center = Offset(cx, cy)
+    )
+
+    // Directional Launch Arrow
+    val rad = Math.toRadians(directionAngle.toDouble())
+    val forward = Offset(cos(rad).toFloat(), sin(rad).toFloat())
+    val perp = Offset(-sin(rad).toFloat(), cos(rad).toFloat())
+
+    val arrowPath = Path().apply {
+        val tip = Offset(cx + forward.x * size * 0.38f, cy + forward.y * size * 0.38f)
+        val wing1 = Offset(cx + forward.x * size * 0.18f + perp.x * size * 0.18f, cy + forward.y * size * 0.18f + perp.y * size * 0.18f)
+        val wing2 = Offset(cx + forward.x * size * 0.18f - perp.x * size * 0.18f, cy + forward.y * size * 0.18f - perp.y * size * 0.18f)
+        moveTo(tip.x, tip.y)
+        lineTo(wing1.x, wing1.y)
+        lineTo(wing2.x, wing2.y)
+        close()
+    }
+    drawPath(arrowPath, color = color.neonGlow, style = Fill)
+}
+
+/**
+ * Holographic Safe Star / Quantum Shield Checkpoint
+ */
+private fun DrawScope.drawHoloShieldStar(
+    center: Offset,
+    radius: Float,
+    shieldRotation: Float
+) {
+    // Holographic Quantum Shield Hexagon/Circle
+    drawCircle(
+        color = Color(0xFF00E5FF).copy(alpha = 0.20f),
+        radius = radius * 1.15f,
+        center = center
+    )
+
+    // Rotating Shield Ring with Dashes
+    val rad = Math.toRadians(shieldRotation.toDouble())
+    drawCircle(
+        color = Color(0xFF0288D1),
+        radius = radius * 1.05f,
+        center = center,
+        style = Stroke(
+            width = 1.8f,
+            pathEffect = PathEffect.dashPathEffect(floatArrayOf(radius * 0.3f, radius * 0.2f))
+        )
+    )
+
+    // Radiant Gold/Cyan Quantum Star
     val path = Path()
-    val innerRadius = radius * 0.45f
-    val points = 5
-    var angle = -Math.PI / 2
+    val outerR = radius * 0.85f
+    val innerR = outerR * 0.38f
+    val points = 8 // 8-point digital holographic star
+    var angle = -Math.PI / 2 + rad * 0.5f
 
     for (i in 0 until points * 2) {
-        val r = if (i % 2 == 0) radius else innerRadius
+        val r = if (i % 2 == 0) outerR else innerR
         val x = (center.x + cos(angle) * r).toFloat()
         val y = (center.y + sin(angle) * r).toFloat()
         if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
         angle += Math.PI / points
     }
     path.close()
-    drawPath(path, color, style = Fill)
+
+    // Outer gold star with dark cyber border for sharp visibility on white
+    drawPath(path, color = Color(0xFFFFB300), style = Fill)
+    drawPath(path, color = Color(0xFF263238), style = Stroke(width = 1.2f))
+
+    // Center Energy Core Point
+    drawCircle(color = Color.White, radius = radius * 0.20f, center = center)
+    drawCircle(color = Color(0xFF0288D1), radius = radius * 0.10f, center = center)
 }
 
-private fun DrawScope.drawTokens(
+/**
+ * Central Quantum Singularity Reactor (Finish Nexus)
+ */
+private fun DrawScope.drawQuantumSingularityCore(
+    cellSize: Float,
+    reactorRotation: Float
+) {
+    val centerTopLeft = Offset(6 * cellSize, 6 * cellSize)
+    val centerSize = 3 * cellSize
+    val centerPoint = Offset(centerTopLeft.x + centerSize / 2f, centerTopLeft.y + centerSize / 2f)
+
+    // 4 Faceted Holographic Quadrants converging to singularity
+    // 1. Red Left Triangle
+    val redPath = Path().apply {
+        moveTo(centerTopLeft.x, centerTopLeft.y)
+        lineTo(centerPoint.x, centerPoint.y)
+        lineTo(centerTopLeft.x, centerTopLeft.y + centerSize)
+        close()
+    }
+    drawPath(
+        path = redPath,
+        brush = Brush.radialGradient(
+            colors = listOf(PlayerColor.RED.primary, PlayerColor.RED.darkCore),
+            center = centerPoint,
+            radius = centerSize * 0.7f
+        )
+    )
+
+    // 2. Green Top Triangle
+    val greenPath = Path().apply {
+        moveTo(centerTopLeft.x, centerTopLeft.y)
+        lineTo(centerPoint.x, centerPoint.y)
+        lineTo(centerTopLeft.x + centerSize, centerTopLeft.y)
+        close()
+    }
+    drawPath(
+        path = greenPath,
+        brush = Brush.radialGradient(
+            colors = listOf(PlayerColor.GREEN.primary, PlayerColor.GREEN.darkCore),
+            center = centerPoint,
+            radius = centerSize * 0.7f
+        )
+    )
+
+    // 3. Yellow Right Triangle
+    val yellowPath = Path().apply {
+        moveTo(centerTopLeft.x + centerSize, centerTopLeft.y)
+        lineTo(centerPoint.x, centerPoint.y)
+        lineTo(centerTopLeft.x + centerSize, centerTopLeft.y + centerSize)
+        close()
+    }
+    drawPath(
+        path = yellowPath,
+        brush = Brush.radialGradient(
+            colors = listOf(PlayerColor.YELLOW.primary, PlayerColor.YELLOW.darkCore),
+            center = centerPoint,
+            radius = centerSize * 0.7f
+        )
+    )
+
+    // 4. Blue Bottom Triangle
+    val bluePath = Path().apply {
+        moveTo(centerTopLeft.x, centerTopLeft.y + centerSize)
+        lineTo(centerPoint.x, centerPoint.y)
+        lineTo(centerTopLeft.x + centerSize, centerTopLeft.y + centerSize)
+        close()
+    }
+    drawPath(
+        path = bluePath,
+        brush = Brush.radialGradient(
+            colors = listOf(PlayerColor.BLUE.primary, PlayerColor.BLUE.darkCore),
+            center = centerPoint,
+            radius = centerSize * 0.7f
+        )
+    )
+
+    // Quadrant Partition Neon Laser Lines
+    val dividerColor = Color(0xFF00E5FF).copy(alpha = 0.75f)
+    drawLine(color = dividerColor, start = centerTopLeft, end = Offset(centerTopLeft.x + centerSize, centerTopLeft.y + centerSize), strokeWidth = 1.5f)
+    drawLine(color = dividerColor, start = Offset(centerTopLeft.x + centerSize, centerTopLeft.y), end = Offset(centerTopLeft.x, centerTopLeft.y + centerSize), strokeWidth = 1.5f)
+
+    // Outer Reactor Containment Ring
+    drawCircle(
+        color = Color(0xFF00E5FF).copy(alpha = 0.5f),
+        radius = centerSize * 0.46f,
+        center = centerPoint,
+        style = Stroke(
+            width = 2f,
+            pathEffect = PathEffect.dashPathEffect(floatArrayOf(cellSize * 0.35f, cellSize * 0.2f))
+        )
+    )
+
+    // Rotating Holographic Gear / Segmented Arc Ring
+    val radAngle = reactorRotation
+    drawArc(
+        color = Color(0xFFFFD600),
+        startAngle = radAngle,
+        sweepAngle = 75f,
+        useCenter = false,
+        topLeft = Offset(centerPoint.x - centerSize * 0.38f, centerPoint.y - centerSize * 0.38f),
+        size = Size(centerSize * 0.76f, centerSize * 0.76f),
+        style = Stroke(width = 2.5f, cap = StrokeCap.Round)
+    )
+    drawArc(
+        color = Color(0xFF00E5FF),
+        startAngle = radAngle + 180f,
+        sweepAngle = 75f,
+        useCenter = false,
+        topLeft = Offset(centerPoint.x - centerSize * 0.38f, centerPoint.y - centerSize * 0.38f),
+        size = Size(centerSize * 0.76f, centerSize * 0.76f),
+        style = Stroke(width = 2.5f, cap = StrokeCap.Round)
+    )
+
+    // Central Singularity Sphere
+    val coreRadius = cellSize * 0.58f
+    drawCircle(
+        brush = Brush.radialGradient(
+            colors = listOf(Color.White, Color(0xFF00E5FF), Color(0xFF7C4DFF), Color(0xFF0D0221)),
+            center = centerPoint,
+            radius = coreRadius
+        ),
+        radius = coreRadius,
+        center = centerPoint
+    )
+
+    // Core Edge Rim
+    drawCircle(
+        color = Color.White,
+        radius = coreRadius,
+        center = centerPoint,
+        style = Stroke(width = 2f)
+    )
+
+    // Victory Nexus Holographic Star Crystal
+    drawSciFiCrystal(centerPoint, radius = cellSize * 0.36f)
+}
+
+/**
+ * Multi-layer Cyber Crystal Star at the center of the Singularity
+ */
+private fun DrawScope.drawSciFiCrystal(center: Offset, radius: Float) {
+    val path = Path()
+    val points = 4
+    for (i in 0 until points * 2) {
+        val r = if (i % 2 == 0) radius else radius * 0.4f
+        val a = -Math.PI / 2 + (i * Math.PI / points)
+        val x = (center.x + cos(a) * r).toFloat()
+        val y = (center.y + sin(a) * r).toFloat()
+        if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
+    }
+    path.close()
+
+    drawPath(path, color = Color(0xFFFFD600), style = Fill)
+    drawPath(path, color = Color.White, style = Stroke(width = 1.2f))
+    drawCircle(color = Color.White, radius = radius * 0.22f, center = center)
+}
+
+/**
+ * Outer Frame with Cyberpunk Corner Brackets
+ */
+private fun DrawScope.drawSciFiFrame(cellSize: Float) {
+    // Outer Neon Border
+    drawRect(
+        brush = Brush.linearGradient(
+            colors = listOf(Color(0xFF00E5FF), Color(0xFF1E3A5F), Color(0xFFFF2A55), Color(0xFF00E676))
+        ),
+        topLeft = Offset.Zero,
+        size = size,
+        style = Stroke(width = 2f)
+    )
+
+    // Corner Sci-Fi Tech Brackets
+    val bracketLen = cellSize * 0.8f
+    drawCornerBrackets(Offset.Zero, size.width, Color(0xFF00E5FF), bracketLen)
+}
+
+/**
+ * Draws HUD-style corner brackets [ ]
+ */
+private fun DrawScope.drawCornerBrackets(
+    topLeft: Offset,
+    dimension: Float,
+    color: Color,
+    bracketLen: Float
+) {
+    val sw = 2.5f
+    val bR = topLeft.x + dimension
+    val bB = topLeft.y + dimension
+
+    // Top-Left
+    drawLine(color, Offset(topLeft.x, topLeft.y), Offset(topLeft.x + bracketLen, topLeft.y), sw)
+    drawLine(color, Offset(topLeft.x, topLeft.y), Offset(topLeft.x, topLeft.y + bracketLen), sw)
+
+    // Top-Right
+    drawLine(color, Offset(bR - bracketLen, topLeft.y), Offset(bR, topLeft.y), sw)
+    drawLine(color, Offset(bR, topLeft.y), Offset(bR, topLeft.y + bracketLen), sw)
+
+    // Bottom-Left
+    drawLine(color, Offset(topLeft.x, bB), Offset(topLeft.x + bracketLen, bB), sw)
+    drawLine(color, Offset(topLeft.x, bB), Offset(topLeft.x, bB - bracketLen), sw)
+
+    // Bottom-Right
+    drawLine(color, Offset(bR - bracketLen, bB), Offset(bR, bB), sw)
+    drawLine(color, Offset(bR, bB), Offset(bR, bB - bracketLen), sw)
+}
+
+/**
+ * Draws High-Tech Levitation Cyber-Drone Tokens
+ */
+private fun DrawScope.drawSciFiTokens(
     tokens: List<TokenScreenPosition>,
     cellSize: Float,
     pulseGlow: Float
@@ -441,63 +946,106 @@ private fun DrawScope.drawTokens(
 
     tokens.forEach { item ->
         val center = item.center
+        val color = item.player.color
 
-        // Pulsing glow for movable tokens
+        // 1. Pulsing Holographic Targeting Halo for movable tokens
         if (item.isMovable) {
-            val haloRadius = baseRadius * (1.1f * pulseGlow)
+            val haloRadius = baseRadius * (1.15f * pulseGlow)
+
+            // Outer Radial Pulse Wave
             drawCircle(
-                color = item.player.color.primary.copy(alpha = 0.4f),
-                radius = haloRadius,
+                color = color.neonGlow.copy(alpha = 0.30f),
+                radius = haloRadius * 1.35f,
                 center = center
             )
+
+            // Radiant Neon Target Ring
             drawCircle(
-                color = Color.White.copy(alpha = 0.8f),
-                radius = haloRadius * 0.9f,
+                color = color.neonGlow.copy(alpha = 0.9f),
+                radius = haloRadius,
                 center = center,
-                style = Stroke(width = 2.5f)
+                style = Stroke(
+                    width = 2.5f,
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(haloRadius * 0.4f, haloRadius * 0.2f))
+                )
             )
+
+            // 4 Targeting Reticle Brackets around the token
+            val reticleArm = haloRadius * 0.35f
+            val rD = haloRadius * 1.1f
+            drawLine(color.neonGlow, Offset(center.x - rD, center.y), Offset(center.x - rD + reticleArm, center.y), 2f)
+            drawLine(color.neonGlow, Offset(center.x + rD, center.y), Offset(center.x + rD - reticleArm, center.y), 2f)
+            drawLine(color.neonGlow, Offset(center.x, center.y - rD), Offset(center.x, center.y - rD + reticleArm), 2f)
+            drawLine(color.neonGlow, Offset(center.x, center.y + rD), Offset(center.x, center.y + rD - reticleArm), 2f)
         }
 
-        // Token Drop Shadow
+        // 2. Projected Ground Glow & Deep Levitation Shadow
         drawCircle(
-            color = Color.Black.copy(alpha = 0.35f),
+            color = color.neonGlow.copy(alpha = 0.25f),
+            radius = baseRadius * 1.1f,
+            center = Offset(center.x, center.y + 3f)
+        )
+        drawCircle(
+            color = Color(0xFF03070C).copy(alpha = 0.55f),
             radius = baseRadius * 0.95f,
-            center = Offset(center.x + 2f, center.y + 4f)
+            center = Offset(center.x + 1.5f, center.y + 4.5f)
         )
 
-        // Outer Token Rim
+        // 3. Cyber Titanium / Precision Armor Outer Rim
         drawCircle(
             brush = Brush.radialGradient(
-                colors = listOf(item.player.color.secondary, item.player.color.darkShade),
-                center = Offset(center.x - baseRadius * 0.3f, center.y - baseRadius * 0.3f),
+                colors = listOf(Color(0xFFE2E8F0), Color(0xFF64748B), Color(0xFF1E293B)),
+                center = Offset(center.x - baseRadius * 0.35f, center.y - baseRadius * 0.35f),
                 radius = baseRadius * 1.4f
             ),
             radius = baseRadius,
             center = center
         )
 
-        // Dark Rim Border
+        // Outer Rim Cyber Seam
         drawCircle(
-            color = Color.White,
+            color = Color.White.copy(alpha = 0.85f),
             radius = baseRadius,
+            center = center,
+            style = Stroke(width = 1.2f)
+        )
+
+        // 4. Glowing Plasma Energy Core (Player Color)
+        val plasmaRadius = baseRadius * 0.78f
+        drawCircle(
+            brush = Brush.radialGradient(
+                colors = listOf(color.secondary, color.primary, color.darkCore),
+                center = Offset(center.x - plasmaRadius * 0.25f, center.y - plasmaRadius * 0.25f),
+                radius = plasmaRadius * 1.3f
+            ),
+            radius = plasmaRadius,
+            center = center
+        )
+
+        // Neon Core Energy Ring
+        drawCircle(
+            color = color.neonGlow,
+            radius = plasmaRadius,
             center = center,
             style = Stroke(width = 1.5f)
         )
 
-        // Inner Crown/Pin Button
+        // 5. High-Specular Glass Top Reflection (Holographic Orb highlight)
+        val specR = plasmaRadius * 0.42f
         drawCircle(
             brush = Brush.radialGradient(
-                colors = listOf(Color.White, item.player.color.lightContainer),
-                center = center,
-                radius = baseRadius * 0.6f
+                colors = listOf(Color.White, color.secondary.copy(alpha = 0.7f), Color.Transparent),
+                center = Offset(center.x - specR * 0.45f, center.y - specR * 0.5f),
+                radius = specR * 1.2f
             ),
-            radius = baseRadius * 0.52f,
-            center = center
+            radius = specR,
+            center = Offset(center.x - plasmaRadius * 0.22f, center.y - plasmaRadius * 0.22f)
         )
 
+        // 6. Central Quantum Node (High-Tech Power Beacon)
         drawCircle(
-            color = item.player.color.primary,
-            radius = baseRadius * 0.3f,
+            color = Color.White,
+            radius = baseRadius * 0.16f,
             center = center
         )
     }
