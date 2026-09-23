@@ -3,6 +3,7 @@ package com.example.ludo.ui
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -56,6 +57,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ludo.model.PlayerColor
@@ -135,18 +137,18 @@ fun LudoScreen(viewModel: LudoViewModel) {
                 .fillMaxSize()
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 12.dp, vertical = 6.dp)
+                .padding(horizontal = 8.dp, vertical = 2.dp)
         ) {
-            // Mode and turns badge
+            // Mode, Turn Status & Counter badge bar
             Row(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                    .padding(horizontal = 4.dp, vertical = 2.dp)
             ) {
                 Surface(
-                    shape = RoundedCornerShape(20.dp),
+                    shape = RoundedCornerShape(16.dp),
                     color = MaterialTheme.colorScheme.primaryContainer,
                     modifier = Modifier.padding(2.dp)
                 ) {
@@ -156,8 +158,39 @@ fun LudoScreen(viewModel: LudoViewModel) {
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
                         ),
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                     )
+                }
+
+                // Live Game Status Badge
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = activeColor.cyberPlate,
+                    border = BorderStroke(1.dp, activeColor.neonGlow.copy(alpha = 0.6f)),
+                    modifier = Modifier.padding(horizontal = 4.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(7.dp)
+                                .clip(CircleShape)
+                                .background(activeColor.neonGlow)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "${activePlayer?.name ?: ""}: ${state.statusMessage}",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White,
+                                fontSize = 11.sp
+                            ),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
                 }
 
                 Text(
@@ -168,48 +201,48 @@ fun LudoScreen(viewModel: LudoViewModel) {
                 )
             }
 
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
             // Top Player Units (Red [top-left] and Green [top-right])
             Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.Top,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 val pRed = state.players.find { it.color == PlayerColor.RED }
                 val pGreen = state.players.find { it.color == PlayerColor.GREEN }
 
-                // Red quadrant (Top-Left): Profile Card + Distinct Dice Station
+                // Red quadrant (Top-Left): Big Dice on top hugged to left corner, Card underneath
                 pRed?.let { p ->
                     val idx = state.players.indexOf(p)
                     val isActive = state.activePlayerIndex == idx
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    Column(
+                        horizontalAlignment = Alignment.Start,
                         modifier = Modifier.weight(1f)
                     ) {
-                        PlayerInfoCard(
-                            player = p,
-                            isActive = isActive,
-                            modifier = Modifier.weight(1f)
-                        )
                         CornerDiceBox(
                             player = p,
                             isActive = isActive,
                             diceValue = state.playerDiceValues[p.color] ?: 1,
                             turnPhase = state.turnPhase,
-                            onDiceClick = { viewModel.onPlayerDiceClicked(p.color) }
+                            onDiceClick = { viewModel.onPlayerDiceClicked(p.color) },
+                            diceSize = 54.dp
+                        )
+                        Spacer(modifier = Modifier.height(5.dp))
+                        PlayerInfoCard(
+                            player = p,
+                            isActive = isActive,
+                            modifier = Modifier.fillMaxWidth()
                         )
                     }
                 } ?: Spacer(modifier = Modifier.weight(1f))
 
-                // Green quadrant (Top-Right): Distinct Dice Station + Profile Card
+                // Green quadrant (Top-Right): Big Dice on top hugged to right corner, Card underneath
                 pGreen?.let { p ->
                     val idx = state.players.indexOf(p)
                     val isActive = state.activePlayerIndex == idx
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    Column(
+                        horizontalAlignment = Alignment.End,
                         modifier = Modifier.weight(1f)
                     ) {
                         CornerDiceBox(
@@ -217,18 +250,20 @@ fun LudoScreen(viewModel: LudoViewModel) {
                             isActive = isActive,
                             diceValue = state.playerDiceValues[p.color] ?: 1,
                             turnPhase = state.turnPhase,
-                            onDiceClick = { viewModel.onPlayerDiceClicked(p.color) }
+                            onDiceClick = { viewModel.onPlayerDiceClicked(p.color) },
+                            diceSize = 54.dp
                         )
+                        Spacer(modifier = Modifier.height(5.dp))
                         PlayerInfoCard(
                             player = p,
                             isActive = isActive,
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.fillMaxWidth()
                         )
                     }
                 } ?: Spacer(modifier = Modifier.weight(1f))
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
             // The Authentic 15x15 Ludo Board
             LudoBoardView(
@@ -238,160 +273,74 @@ fun LudoScreen(viewModel: LudoViewModel) {
                 onTokenClicked = { tokenId ->
                     viewModel.onTokenClicked(tokenId)
                 },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 6.dp)
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
             // Bottom Player Units (Blue [bottom-left] and Yellow [bottom-right])
             Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.Top,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 val pBlue = state.players.find { it.color == PlayerColor.BLUE }
                 val pYellow = state.players.find { it.color == PlayerColor.YELLOW }
 
-                // Blue quadrant (Bottom-Left): Profile Card + Distinct Dice Station
+                // Blue quadrant (Bottom-Left): Card on top, Big Dice underneath hugged to left corner
                 pBlue?.let { p ->
                     val idx = state.players.indexOf(p)
                     val isActive = state.activePlayerIndex == idx
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    Column(
+                        horizontalAlignment = Alignment.Start,
                         modifier = Modifier.weight(1f)
                     ) {
                         PlayerInfoCard(
                             player = p,
                             isActive = isActive,
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.fillMaxWidth()
                         )
+                        Spacer(modifier = Modifier.height(5.dp))
                         CornerDiceBox(
                             player = p,
                             isActive = isActive,
                             diceValue = state.playerDiceValues[p.color] ?: 1,
                             turnPhase = state.turnPhase,
-                            onDiceClick = { viewModel.onPlayerDiceClicked(p.color) }
+                            onDiceClick = { viewModel.onPlayerDiceClicked(p.color) },
+                            diceSize = 54.dp
                         )
                     }
                 } ?: Spacer(modifier = Modifier.weight(1f))
 
-                // Yellow quadrant (Bottom-Right): Distinct Dice Station + Profile Card
+                // Yellow quadrant (Bottom-Right): Card on top, Big Dice underneath hugged to right corner
                 pYellow?.let { p ->
                     val idx = state.players.indexOf(p)
                     val isActive = state.activePlayerIndex == idx
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    Column(
+                        horizontalAlignment = Alignment.End,
                         modifier = Modifier.weight(1f)
                     ) {
+                        PlayerInfoCard(
+                            player = p,
+                            isActive = isActive,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(5.dp))
                         CornerDiceBox(
                             player = p,
                             isActive = isActive,
                             diceValue = state.playerDiceValues[p.color] ?: 1,
                             turnPhase = state.turnPhase,
-                            onDiceClick = { viewModel.onPlayerDiceClicked(p.color) }
-                        )
-                        PlayerInfoCard(
-                            player = p,
-                            isActive = isActive,
-                            modifier = Modifier.weight(1f)
+                            onDiceClick = { viewModel.onPlayerDiceClicked(p.color) },
+                            diceSize = 54.dp
                         )
                     }
                 } ?: Spacer(modifier = Modifier.weight(1f))
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
-
-            // Active Turn & Status Info Panel
-            Card(
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = activeColor.lightContainer
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .border(1.5.dp, activeColor.primary.copy(alpha = 0.5f), RoundedCornerShape(16.dp))
-                    .testTag("action_control_panel")
-                    .clickable {
-                        viewModel.onPlayerDiceClicked(activeColor)
-                    }
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 14.dp, vertical = 10.dp)
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier
-                                    .size(10.dp)
-                                    .clip(CircleShape)
-                                    .background(activeColor.primary)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = "${activePlayer?.name ?: ""}'s Turn",
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    color = activeColor.darkShade,
-                                    fontSize = 15.sp
-                                )
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(3.dp))
-
-                        Text(
-                            text = state.statusMessage,
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                color = MaterialTheme.colorScheme.onSurface,
-                                fontSize = 12.5.sp
-                            )
-                        )
-
-                        if (state.turnPhase == TurnPhase.SELECTING_TOKEN && !state.isCurrentPlayerBot) {
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = "👆 Tap the highlighted token on the board",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    color = activeColor.primary,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 11.sp
-                                )
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.width(10.dp))
-
-                    Surface(
-                        shape = RoundedCornerShape(10.dp),
-                        color = activeColor.primary,
-                        shadowElevation = 2.dp
-                    ) {
-                        Text(
-                            text = when {
-                                state.turnPhase == TurnPhase.WAITING_FOR_ROLL -> if (state.isCurrentPlayerBot) "Bot Rolling" else "Tap Dice 🎲"
-                                state.turnPhase == TurnPhase.ROLLING -> "Rolling..."
-                                state.turnPhase == TurnPhase.SELECTING_TOKEN -> "Move ♟️"
-                                else -> "Next Turn"
-                            },
-                            style = MaterialTheme.typography.labelMedium.copy(
-                                color = Color.White,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 11.sp
-                            ),
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(6.dp))
         }
     }
 

@@ -109,9 +109,9 @@ fun LudoBoardView(
         modifier = modifier
             .fillMaxWidth()
             .aspectRatio(1f)
-            .padding(6.dp)
-            .shadow(16.dp, RoundedCornerShape(20.dp), spotColor = Color(0xFF00E5FF))
-            .clip(RoundedCornerShape(20.dp))
+            .padding(1.dp)
+            .shadow(12.dp, RoundedCornerShape(18.dp), spotColor = Color(0xFF00E5FF))
+            .clip(RoundedCornerShape(18.dp))
             .testTag("ludo_board_canvas")
     ) {
         val boardSize = constraints.maxWidth.toFloat()

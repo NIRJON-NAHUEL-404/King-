@@ -42,14 +42,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ludo.model.Player
 import com.example.ludo.viewmodel.TurnPhase
 
 /**
- * Dedicated Standalone Player Profile Card (Separate from Dice).
- * Displays player avatar, name, rank, and finished tokens count.
+ * Compact Player Profile Card ("প্লেয়ার কোট").
+ * Sleek and space-efficient: displays avatar, name, rank, and token progress.
  */
 @Composable
 fun PlayerInfoCard(
@@ -62,7 +63,7 @@ fun PlayerInfoCard(
     val infiniteTransition = rememberInfiniteTransition(label = "playerTurnPulse")
     val pulseScale by infiniteTransition.animateFloat(
         initialValue = 1f,
-        targetValue = if (isActive) 1.03f else 1f,
+        targetValue = if (isActive) 1.02f else 1f,
         animationSpec = infiniteRepeatable(
             animation = tween(600, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
@@ -71,54 +72,54 @@ fun PlayerInfoCard(
     )
 
     val borderColor by animateColorAsState(
-        targetValue = if (isActive) color.neonGlow else Color(0xFF1E293B).copy(alpha = 0.4f),
+        targetValue = if (isActive) color.neonGlow else Color(0xFF1E293B).copy(alpha = 0.35f),
         label = "borderColor"
     )
 
     Surface(
-        shape = RoundedCornerShape(12.dp),
-        color = if (isActive) color.cyberPlate else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
-        tonalElevation = if (isActive) 6.dp else 1.dp,
+        shape = RoundedCornerShape(10.dp),
+        color = if (isActive) color.cyberPlate else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        tonalElevation = if (isActive) 4.dp else 1.dp,
         modifier = modifier
             .testTag("player_card_${player.color.name.lowercase()}")
             .scale(pulseScale)
             .border(
-                width = if (isActive) 1.8.dp else 0.8.dp,
+                width = if (isActive) 1.5.dp else 0.8.dp,
                 color = borderColor,
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(10.dp)
             )
-            .shadow(if (isActive) 6.dp else 1.dp, RoundedCornerShape(12.dp))
+            .shadow(if (isActive) 4.dp else 1.dp, RoundedCornerShape(10.dp))
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
-                .padding(horizontal = 6.dp, vertical = 5.dp)
+                .padding(horizontal = 6.dp, vertical = 3.5.dp)
                 .fillMaxWidth()
         ) {
             // Player Avatar
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
-                    .size(28.dp)
+                    .size(22.dp)
                     .clip(CircleShape)
                     .background(
                         Brush.radialGradient(
                             colors = listOf(color.secondary, color.darkCore)
                         )
                     )
-                    .border(1.2.dp, Color.White, CircleShape)
+                    .border(1.dp, Color.White, CircleShape)
             ) {
                 Icon(
                     imageVector = if (player.isBot) Icons.Default.Android else Icons.Default.Person,
                     contentDescription = null,
                     tint = Color.White,
-                    modifier = Modifier.size(15.dp)
+                    modifier = Modifier.size(12.dp)
                 )
             }
 
-            Spacer(modifier = Modifier.width(6.dp))
+            Spacer(modifier = Modifier.width(5.dp))
 
-            // Player Name and Tokens Progress
+            // Player Name and Finished Token Dots
             Column(modifier = Modifier.weight(1f)) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -127,9 +128,9 @@ fun PlayerInfoCard(
                 ) {
                     Text(
                         text = player.name,
-                        style = MaterialTheme.typography.labelMedium.copy(
+                        style = MaterialTheme.typography.labelSmall.copy(
                             fontWeight = if (isActive) FontWeight.Bold else FontWeight.Medium,
-                            fontSize = 11.sp
+                            fontSize = 10.5.sp
                         ),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -142,13 +143,13 @@ fun PlayerInfoCard(
                                 imageVector = Icons.Default.EmojiEvents,
                                 contentDescription = "Rank",
                                 tint = Color(0xFFFFD600),
-                                modifier = Modifier.size(12.dp)
+                                modifier = Modifier.size(11.dp)
                             )
                             Text(
                                 text = "#${player.rank}",
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 9.5.sp,
+                                    fontSize = 9.sp,
                                     color = Color(0xFFFFD600)
                                 )
                             )
@@ -156,18 +157,18 @@ fun PlayerInfoCard(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(2.dp))
+                Spacer(modifier = Modifier.height(1.dp))
 
                 // Finished tokens indicators (4 dots)
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(2.5.dp),
+                    horizontalArrangement = Arrangement.spacedBy(2.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     val finishedCount = player.finishedTokensCount
                     for (i in 0 until 4) {
                         Box(
                             modifier = Modifier
-                                .size(5.dp)
+                                .size(4.5.dp)
                                 .clip(CircleShape)
                                 .background(
                                     if (i < finishedCount) color.neonGlow else Color(0xFF64748B)
@@ -179,7 +180,7 @@ fun PlayerInfoCard(
                     Text(
                         text = "$finishedCount/4",
                         style = MaterialTheme.typography.labelSmall.copy(
-                            fontSize = 8.5.sp,
+                            fontSize = 8.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = if (isActive) color.neonGlow else MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -191,8 +192,8 @@ fun PlayerInfoCard(
 }
 
 /**
- * Dedicated Standalone Corner Dice Box.
- * Separated from the player profile card for clean, authentic Ludo look.
+ * Large, easy-to-tap Corner Dice Box ("কোটের নিচে বড় ছক্কা").
+ * Positioned under the player card with generous size and animated pulse for easy rolling.
  */
 @Composable
 fun CornerDiceBox(
@@ -201,7 +202,8 @@ fun CornerDiceBox(
     diceValue: Int,
     turnPhase: TurnPhase,
     onDiceClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    diceSize: Dp = 54.dp
 ) {
     val color = player.color
 
@@ -224,11 +226,11 @@ fun CornerDiceBox(
         modifier = modifier
             .scale(if (canRoll) pulseScale else 1f)
             .shadow(
-                elevation = if (canRoll) 8.dp else if (isActive) 4.dp else 1.dp,
-                shape = RoundedCornerShape(12.dp),
+                elevation = if (canRoll) 10.dp else if (isActive) 5.dp else 2.dp,
+                shape = RoundedCornerShape(14.dp),
                 spotColor = if (isActive) color.neonGlow else Color.Black
             )
-            .clip(RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(14.dp))
             .background(
                 brush = Brush.verticalGradient(
                     colors = if (isActive) {
@@ -239,15 +241,19 @@ fun CornerDiceBox(
                 )
             )
             .border(
-                width = if (canRoll) 2.dp else if (isActive) 1.2.dp else 0.8.dp,
+                width = if (canRoll) 2.5.dp else if (isActive) 1.5.dp else 0.8.dp,
                 color = when {
                     canRoll -> color.neonGlow
-                    isActive -> color.primary.copy(alpha = 0.8f)
+                    isActive -> color.primary.copy(alpha = 0.85f)
                     else -> Color(0xFF1E2F42)
                 },
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(14.dp)
             )
-            .padding(4.dp)
+            .clickable(
+                enabled = canRoll || canTapToMove,
+                onClick = onDiceClick
+            )
+            .padding(horizontal = 10.dp, vertical = 6.dp)
     ) {
         DiceView(
             diceValue = diceValue,
@@ -256,7 +262,7 @@ fun CornerDiceBox(
             isBot = player.isBot,
             isActivePlayer = isActive,
             showLabel = true,
-            diceSize = 40.dp,
+            diceSize = diceSize,
             diceTag = "dice_${player.color.name.lowercase()}",
             onDiceClick = onDiceClick
         )
