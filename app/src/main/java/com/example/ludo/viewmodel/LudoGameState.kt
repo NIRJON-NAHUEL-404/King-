@@ -40,7 +40,13 @@ data class LudoGameState(
     val extraTurnEarned: Boolean = false,
     val lastCapturedToken: Token? = null,
     val totalTurns: Int = 0,
-    val animatingToken: TokenAnimationState? = null
+    val animatingToken: TokenAnimationState? = null,
+    val playerDiceValues: Map<PlayerColor, Int> = mapOf(
+        PlayerColor.RED to 1,
+        PlayerColor.GREEN to 1,
+        PlayerColor.YELLOW to 1,
+        PlayerColor.BLUE to 1
+    )
 ) {
     val activePlayer: Player?
         get() = players.getOrNull(activePlayerIndex)

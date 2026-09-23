@@ -61,6 +61,15 @@ class LudoSoundManager(private val context: Context) {
         }
     }
 
+    fun playError() {
+        vibrate(30)
+        scope.launch {
+            try {
+                toneGenerator?.startTone(ToneGenerator.TONE_PROP_NACK, 60)
+            } catch (_: Exception) {}
+        }
+    }
+
     fun playSixRolled() {
         vibratePattern(longArrayOf(0, 30, 40, 60))
         scope.launch {

@@ -64,10 +64,13 @@ class LudoViewModel(application: Application) : AndroidViewModel(application) {
             )
         }
 
+        val initialDiceMap = selectedColors.associateWith { 1 }
+
         _gameState.value = LudoGameState(
             players = players,
             activePlayerIndex = 0,
             diceValue = 1,
+            playerDiceValues = initialDiceMap,
             turnPhase = TurnPhase.WAITING_FOR_ROLL,
             statusMessage = "${players.first().name}'s turn to roll!",
             gameMode = mode
@@ -79,20 +82,31 @@ class LudoViewModel(application: Application) : AndroidViewModel(application) {
     fun rollDice() {
         val state = _gameState.value
         if (state.turnPhase != TurnPhase.WAITING_FOR_ROLL || state.isGameOver) return
+        val activePlayer = state.activePlayer ?: return
 
         viewModelScope.launch {
-            _gameState.update { it.copy(turnPhase = TurnPhase.ROLLING, statusMessage = "Rolling dice...") }
+            _gameState.update { it.copy(turnPhase = TurnPhase.ROLLING, statusMessage = "${activePlayer.name} is rolling dice...") }
             soundManager.playDiceRoll()
 
             // Realistic dice rolling animation frames
             for (i in 0 until 6) {
                 delay(60)
                 val tempDice = Random.nextInt(1, 7)
-                _gameState.update { it.copy(diceValue = tempDice) }
+                _gameState.update {
+                    it.copy(
+                        diceValue = tempDice,
+                        playerDiceValues = it.playerDiceValues + (activePlayer.color to tempDice)
+                    )
+                }
             }
 
             val finalDice = Random.nextInt(1, 7)
-            _gameState.update { it.copy(diceValue = finalDice) }
+            _gameState.update {
+                it.copy(
+                    diceValue = finalDice,
+                    playerDiceValues = it.playerDiceValues + (activePlayer.color to finalDice)
+                )
+            }
 
             handleDiceRollResult(finalDice)
         }
@@ -182,17 +196,35 @@ class LudoViewModel(application: Application) : AndroidViewModel(application) {
         moveToken(tokenId)
     }
 
-    fun onDiceClicked() {
+    fun onPlayerDiceClicked(color: PlayerColor) {
         val state = _gameState.value
-        if (state.turnPhase == TurnPhase.WAITING_FOR_ROLL && !state.isCurrentPlayerBot) {
+        if (state.isGameOver) return
+        val activePlayer = state.activePlayer ?: return
+
+        if (activePlayer.color != color) {
+            // User clicked another player's corner dice
+            soundManager.playError()
+            _gameState.update {
+                it.copy(statusMessage = "Wait! It's ${activePlayer.name}'s turn. Roll using ${activePlayer.color.title}'s dice.")
+            }
+            return
+        }
+
+        if (activePlayer.isBot) return
+
+        if (state.turnPhase == TurnPhase.WAITING_FOR_ROLL) {
             rollDice()
-        } else if (state.turnPhase == TurnPhase.SELECTING_TOKEN && !state.isCurrentPlayerBot) {
-            // If user taps dice when a move is pending, advance the first available token
+        } else if (state.turnPhase == TurnPhase.SELECTING_TOKEN) {
             val firstMovable = state.movableTokenIds.firstOrNull()
             if (firstMovable != null) {
                 moveToken(firstMovable)
             }
         }
+    }
+
+    fun onDiceClicked() {
+        val activeColor = _gameState.value.activePlayer?.color ?: PlayerColor.RED
+        onPlayerDiceClicked(activeColor)
     }
 
     private fun moveToken(tokenId: Int) {

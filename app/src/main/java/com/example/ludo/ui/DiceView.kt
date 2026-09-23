@@ -50,18 +50,21 @@ fun DiceView(
     isBot: Boolean,
     onDiceClick: () -> Unit,
     modifier: Modifier = Modifier,
-    diceSize: Dp = 68.dp
+    diceSize: Dp = 48.dp,
+    isActivePlayer: Boolean = true,
+    showLabel: Boolean = true,
+    diceTag: String = "dice_roll_box"
 ) {
-    val isRolling = turnPhase == TurnPhase.ROLLING
-    val canRoll = turnPhase == TurnPhase.WAITING_FOR_ROLL && !isBot
-    val canTapToMove = turnPhase == TurnPhase.SELECTING_TOKEN && !isBot
+    val isRolling = isActivePlayer && turnPhase == TurnPhase.ROLLING
+    val canRoll = isActivePlayer && turnPhase == TurnPhase.WAITING_FOR_ROLL && !isBot
+    val canTapToMove = isActivePlayer && turnPhase == TurnPhase.SELECTING_TOKEN && !isBot
 
     val infiniteTransition = rememberInfiniteTransition(label = "dicePulse")
     val pulseScale by infiniteTransition.animateFloat(
         initialValue = 1f,
-        targetValue = if (canRoll) 1.08f else 1f,
+        targetValue = if (canRoll) 1.12f else 1f,
         animationSpec = infiniteRepeatable(
-            animation = tween(600, easing = FastOutSlowInEasing),
+            animation = tween(500, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         ),
         label = "pulseScale"
@@ -71,11 +74,13 @@ fun DiceView(
         initialValue = 0f,
         targetValue = if (isRolling) 360f else 0f,
         animationSpec = infiniteRepeatable(
-            animation = tween(200, easing = FastOutSlowInEasing),
+            animation = tween(180, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Restart
         ),
         label = "rollRotation"
     )
+
+    val pipSize = (diceSize.value * 0.16f).coerceIn(6f, 10f).dp
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -85,49 +90,66 @@ fun DiceView(
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
-                .testTag("dice_roll_box")
+                .testTag(diceTag)
                 .scale(if (canRoll) pulseScale else 1f)
                 .rotate(if (isRolling) rollRotation else 0f)
-                .shadow(elevation = if (canRoll) 10.dp else 4.dp, shape = RoundedCornerShape(16.dp))
-                .clip(RoundedCornerShape(16.dp))
+                .shadow(
+                    elevation = if (canRoll) 8.dp else if (isActivePlayer) 4.dp else 2.dp,
+                    shape = RoundedCornerShape(12.dp)
+                )
+                .clip(RoundedCornerShape(12.dp))
                 .background(
                     brush = Brush.verticalGradient(
-                        colors = listOf(Color(0xFFFFFFFF), Color(0xFFE8ECEF))
+                        colors = if (isActivePlayer) {
+                            listOf(Color(0xFFFFFFFF), Color(0xFFF1F5F9))
+                        } else {
+                            listOf(Color(0xFFF8F9FA), Color(0xFFE9ECEF))
+                        }
                     )
                 )
                 .border(
-                    width = if (canRoll || canTapToMove) 3.dp else 1.5.dp,
-                    color = if (canRoll || canTapToMove) activeColor.primary else Color(0xFFCFD8DC),
-                    shape = RoundedCornerShape(16.dp)
+                    width = if (canRoll || canTapToMove) 2.5.dp else if (isActivePlayer) 1.5.dp else 1.dp,
+                    color = when {
+                        canRoll || canTapToMove -> activeColor.primary
+                        isActivePlayer -> activeColor.primary.copy(alpha = 0.6f)
+                        else -> activeColor.primary.copy(alpha = 0.25f)
+                    },
+                    shape = RoundedCornerShape(12.dp)
                 )
                 .size(diceSize)
                 .clickable(
-                    enabled = (canRoll || canTapToMove) && !isRolling,
                     onClick = onDiceClick
                 )
-                .padding(10.dp)
+                .padding((diceSize.value * 0.12f).coerceIn(4f, 8f).dp)
         ) {
-            DicePips(value = diceValue, pipColor = if (diceValue == 6) activeColor.primary else Color(0xFF263238))
-        }
-
-        Spacer(modifier = Modifier.height(4.dp))
-
-        val labelText = when {
-            isRolling -> "Rolling..."
-            canRoll -> "Tap to Roll"
-            canTapToMove -> "Tap Move"
-            isBot -> "Bot Turn"
-            else -> "Rolled: $diceValue"
-        }
-
-        Text(
-            text = labelText,
-            style = MaterialTheme.typography.labelSmall.copy(
-                fontSize = 11.sp,
-                fontWeight = if (canRoll) FontWeight.Bold else FontWeight.Medium,
-                color = if (canRoll) activeColor.primary else MaterialTheme.colorScheme.onSurfaceVariant
+            DicePips(
+                value = diceValue,
+                pipColor = if (diceValue == 6) activeColor.primary else if (isActivePlayer) Color(0xFF1E293B) else Color(0xFF64748B),
+                pipSize = pipSize
             )
-        )
+        }
+
+        if (showLabel) {
+            Spacer(modifier = Modifier.height(2.dp))
+
+            val labelText = when {
+                isRolling -> "Rolling..."
+                canRoll -> "ROLL!"
+                canTapToMove -> "MOVE"
+                isActivePlayer && isBot -> "Bot..."
+                isActivePlayer -> "$diceValue"
+                else -> "$diceValue"
+            }
+
+            Text(
+                text = labelText,
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontSize = 10.sp,
+                    fontWeight = if (canRoll) FontWeight.ExtraBold else FontWeight.SemiBold,
+                    color = if (canRoll) activeColor.primary else if (isActivePlayer) activeColor.darkShade else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            )
+        }
     }
 }
 
@@ -135,9 +157,9 @@ fun DiceView(
 fun DicePips(
     value: Int,
     pipColor: Color,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    pipSize: Dp = 8.dp
 ) {
-    val pipSize = 9.dp
 
     Box(modifier = modifier.fillMaxSize()) {
         when (value) {
